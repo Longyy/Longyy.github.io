@@ -3,7 +3,8 @@
         <title>所有文章 - 破折号</title>
         <link>http://example.org/posts/</link>
         <description>所有文章 | 破折号</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><lastBuildDate>Wed, 17 Jun 2020 16:34:35 &#43;0800</lastBuildDate><atom:link href="http://example.org/posts/" rel="self" type="application/rss+xml" /><item>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
+            <webMaster>786603430@qq.com (Little Dragon)</webMaster><lastBuildDate>Wed, 17 Jun 2020 16:34:35 &#43;0800</lastBuildDate><atom:link href="http://example.org/posts/" rel="self" type="application/rss+xml" /><item>
     <title>My First Post</title>
     <link>http://example.org/posts/my-first-post/</link>
     <pubDate>Wed, 17 Jun 2020 16:34:35 &#43;0800</pubDate>

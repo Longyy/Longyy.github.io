@@ -2,7 +2,7 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>http://example.org/en/categories/</loc><xhtml:link
+            <loc>http://example.org/en/categories/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-cn"
                         href="http://example.org/categories/"
@@ -11,7 +11,7 @@
                     hreflang="en"
                     href="http://example.org/en/categories/"
                     /></url><url>
-            <loc>http://example.org/en/tags/</loc><xhtml:link
+            <loc>http://example.org/en/tags/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-cn"
                         href="http://example.org/tags/"
@@ -20,7 +20,7 @@
                     hreflang="en"
                     href="http://example.org/en/tags/"
                     /></url><url>
-            <loc>http://example.org/en/</loc><xhtml:link
+            <loc>http://example.org/en/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
                         rel="alternate"
                         hreflang="zh-cn"
                         href="http://example.org/"

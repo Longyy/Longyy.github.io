@@ -3,5 +3,6 @@
         <title>Categories - Category - 破折号</title>
         <link>http://example.org/en/categories/</link>
         <description>Categories - Category - 破折号</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><atom:link href="http://example.org/en/categories/" rel="self" type="application/rss+xml" /></channel>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
+            <webMaster>786603430@qq.com (Little Dragon)</webMaster><atom:link href="http://example.org/en/categories/" rel="self" type="application/rss+xml" /></channel>
 </rss>
