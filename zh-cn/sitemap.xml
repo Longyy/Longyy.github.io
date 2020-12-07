@@ -2,7 +2,7 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>http://example.org/categories/</loc><lastmod>2020-06-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
+            <loc>http://example.org/categories/</loc><lastmod>2020-12-06T17:44:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
                         href="http://example.org/en/categories/"
@@ -11,8 +11,10 @@
                     hreflang="zh-cn"
                     href="http://example.org/categories/"
                     /></url><url>
-            <loc>http://example.org/posts/</loc><lastmod>2020-06-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
-            <loc>http://example.org/tags/</loc><lastmod>2020-06-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
+            <loc>http://example.org/categories/kubernetes/</loc><lastmod>2020-12-06T17:44:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>http://example.org/tags/kubernetes%E7%B3%BB%E5%88%97/</loc><lastmod>2020-12-06T17:44:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>http://example.org/posts/</loc><lastmod>2020-12-06T17:44:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>http://example.org/tags/</loc><lastmod>2020-12-06T17:44:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
                         href="http://example.org/en/tags/"
@@ -21,6 +23,7 @@
                     hreflang="zh-cn"
                     href="http://example.org/tags/"
                     /></url><url>
+            <loc>http://example.org/posts/kubernetes/rootfs/</loc><lastmod>2020-12-06T17:44:26&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
             <loc>http://example.org/about/</loc><lastmod>2020-06-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>http://example.org/posts/algorithm-bubble-sort/</loc><lastmod>2020-06-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>
             <loc>http://example.org/categories/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</loc><lastmod>2020-06-29T00:00:00&#43;00:00</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url><url>

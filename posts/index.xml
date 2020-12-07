@@ -4,7 +4,14 @@
         <link>http://example.org/posts/</link>
         <description>所有文章 | 破折号</description>
         <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
-            <webMaster>786603430@qq.com (Little Dragon)</webMaster><lastBuildDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="http://example.org/posts/" rel="self" type="application/rss+xml" /><item>
+            <webMaster>786603430@qq.com (Little Dragon)</webMaster><lastBuildDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</lastBuildDate><atom:link href="http://example.org/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>容器镜像之RootFS解析</title>
+    <link>http://example.org/posts/kubernetes/rootfs/</link>
+    <pubDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</pubDate>
+    <author>作者</author>
+    <guid>http://example.org/posts/kubernetes/rootfs/</guid>
+    <description><![CDATA[我们知道Docker使用Namespace对容器进程进行隔离，让容器进程只能看到该Namespce内的“世界”；同时使用Cgroups来限制]]></description>
+</item><item>
     <title>冒泡排序算法</title>
     <link>http://example.org/posts/algorithm-bubble-sort/</link>
     <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
@@ -17,6 +24,6 @@
     <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
     <author>作者</author>
     <guid>http://example.org/posts/algorithm-insertion-sort/</guid>
-    <description><![CDATA[#插入排序算法 package main import &#34;fmt&#34; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历]]></description>
+    <description><![CDATA[插入排序算法 package main import &#34;fmt&#34; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历后]]></description>
 </item></channel>
 </rss>

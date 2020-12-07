@@ -17,6 +17,6 @@
     <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
     <author>作者</author>
     <guid>http://example.org/posts/algorithm-insertion-sort/</guid>
-    <description><![CDATA[#插入排序算法 package main import &#34;fmt&#34; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历]]></description>
+    <description><![CDATA[插入排序算法 package main import &#34;fmt&#34; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历后]]></description>
 </item></channel>
 </rss>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>容器镜像之RootFS解析 - 破折号</title><meta name="Description" content=""><meta property="og:title" content="容器镜像之RootFS解析" />
+<meta property="og:description" content="我们知道Docker使用Namespace对容器进程进行隔离，让容器进程只能看到该Namespce内的“世界”；同时使用Cgroups来限制" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://example.org/posts/kubernetes/rootfs/" />
+<meta property="article:published_time" content="2020-12-06T17:44:26+08:00" />
+<meta property="article:modified_time" content="2020-12-06T17:44:26+08:00" /><meta property="og:site_name" content="破折号" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="容器镜像之RootFS解析"/>
+<meta name="twitter:description" content="我们知道Docker使用Namespace对容器进程进行隔离，让容器进程只能看到该Namespce内的“世界”；同时使用Cgroups来限制"/>
+<meta name="application-name" content="破折号">
+<meta name="apple-mobile-web-app-title" content="破折号"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="http://example.org/posts/kubernetes/rootfs/" /><link rel="prev" href="http://example.org/posts/algorithm-bubble-sort/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.css"><link rel="stylesheet" href="/css/style.min.css"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.css"><link rel="stylesheet" href="/lib/animate/animate.min.css"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "容器镜像之RootFS解析",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "http:\/\/example.org\/posts\/kubernetes\/rootfs\/"
+        },"genre": "posts","keywords": "Kubernetes系列","wordcount":  1383 ,
+        "url": "http:\/\/example.org\/posts\/kubernetes\/rootfs\/","datePublished": "2020-12-06T17:44:26+08:00","dateModified": "2020-12-06T17:44:26+08:00","publisher": {
+            "@type": "Organization",
+            "name": "Little Dragon"},"author": {
+                "@type": "Person",
+                "name": "Little Dragon"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="" header-mobile=""><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('dark' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'dark' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="破折号">破折号</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/tags/kubernetes%E7%B3%BB%E5%88%97"> Kubernetes系列 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/posts/kubernetes/rootfs/" selected>简体中文</option></select>
+                    </a><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="破折号">破折号</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/tags/kubernetes%E7%B3%BB%E5%88%97" title="">Kubernetes系列</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/posts/kubernetes/rootfs/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">容器镜像之RootFS解析</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="http://blog.51set.cn" title="Author" target="_blank" rel="noopener noreffer author" class="author"><i class="fas fa-user-circle fa-fw"></i>Little Dragon</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/kubernetes/"><i class="far fa-folder fa-fw"></i>Kubernetes</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2020/12/6">2020/12/6</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 1383 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 3 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#mount-namespace">Mount Namespace</a></li>
+    <li><a href="#chroot">chroot</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p>我们知道Docker使用Namespace对容器进程进行隔离，让容器进程只能看到该Namespce内的“世界”；同时使用Cgroups来限制容器资源，那容器内的文件系统呢，难到要继承宿主机的文件系统吗？显然不是，不然宿主机上多个容器之间岂不乱套了。实际上，Docker使用了Mount Namespace和RootFS技术，对文件系统进行了隔离, 使得容器可以拥有完全独立的文件系统。</p>
+<h2 id="mount-namespace">Mount Namespace</h2>
+<p>为了理解其原理，我使用某大V的一段C程序：</p>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c">
+<span class="cp">#define _GNU_SOURCE
+</span><span class="cp">#include</span> <span class="cpf">&lt;sys/mount.h&gt; </span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;sys/types.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;sys/wait.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;sched.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;signal.h&gt;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp">
+</span><span class="cp">#define STACK_SIZE (1024 * 1024)
+</span><span class="cp"></span><span class="k">static</span> <span class="kt">char</span> <span class="n">container_stack</span><span class="p">[</span><span class="n">STACK_SIZE</span><span class="p">];</span>
+<span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">container_args</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">&#34;/bin/bash&#34;</span><span class="p">,</span>
+  <span class="nb">NULL</span>
+<span class="p">};</span>
+
+<span class="kt">int</span> <span class="nf">container_main</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Container - inside the container!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="n">execv</span><span class="p">(</span><span class="n">container_args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">container_args</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Something&#39;s wrong!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Parent - start a container!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">container_pid</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="n">container_main</span><span class="p">,</span> <span class="n">container_stack</span><span class="o">+</span><span class="n">STACK_SIZE</span><span class="p">,</span> <span class="n">CLONE_NEWNS</span> <span class="o">|</span> <span class="n">SIGCHLD</span> <span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">waitpid</span><span class="p">(</span><span class="n">container_pid</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Parent - container stopped!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div><p>该程序通过clone创建一个子进程并声明启用Mount Namespace (CLONE_NEWNS), 子进程创建后执行&rdquo;/bin/bash&quot;命令，这个shell运行在Mount Namespace的隔离环境中。我们来编译并执行这个程序：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ gcc -o ns ns.c
+$ ./ns
+Parent - start a container!
+Container - inside the container!
+</code></pre></div><p>于是，我们进入了“容器”当中，我们接着看一下/tmp目录下的内容：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ ls /tmp
+<span class="c1"># 会看到内容与宿主机上/tmp目录的一模一样</span>
+</code></pre></div><p>新创建的容器会直接继承宿主机上的各个挂载点。并没有起到我们想要的“隔离”的作用。</p>
+<p>事实上，要让Mount Namespace起作用，除了在创建容器时进行声明，我们还要告诉容器哪些目录要进行挂载。这里我们修改代码重新挂载/tmp目录：</p>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="c1">// ...
+</span><span class="c1"></span><span class="kt">int</span> <span class="nf">container_main</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Container - inside the container!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="n">mount</span><span class="p">(</span><span class="s">&#34;none&#34;</span><span class="p">,</span> <span class="s">&#34;/tmp&#34;</span><span class="p">,</span> <span class="s">&#34;tmpfs&#34;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">);</span> <span class="c1">//重新以tmpfs(内存盘)的格式挂载/tmp目录
+</span><span class="c1"></span>  <span class="n">execv</span><span class="p">(</span><span class="n">container_args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">container_args</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Something&#39;s wrong!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// ...
+</span></code></pre></div><p>修改后再次编译执行，</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ gcc -o ns ns.c
+$ ./ns
+Parent - start a container!
+Container - inside the container!
+$ ls /tmp
+</code></pre></div><p>发现此时tmp变成了空目录。可以用“df -a”命令查看一下。</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ df -a <span class="p">|</span> grep tmp
+<span class="c1"># none              512920        0    512920   0% /tmp</span>
+</code></pre></div><p>我们在宿主机上再次查看：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ df -a <span class="p">|</span> grep tmp
+<span class="c1"># none              512920        0    512920   0% /tmp</span>
+</code></pre></div><p>这是因为很多云服务器上根目录的挂载是shared类型的，可以如下进行查看：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ cat /proc/self/mountinfo
+<span class="m">22</span> <span class="m">1</span> 253:1 / / rw,relatime shared:1 - ext4 /dev/vda1 rw,errors<span class="o">=</span>remount-ro,data<span class="o">=</span>ordered
+</code></pre></div><p>为避免这种情况，我们需要在容器中对根目录进行重新挂载：</p>
+<div class="highlight"><pre class="chroma"><code class="language-c" data-lang="c"><span class="c1">// ...
+</span><span class="c1"></span><span class="kt">int</span> <span class="nf">container_main</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Container - inside the container!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="c1">//根目录的挂载类型是shared，需要重新挂载根目录
+</span><span class="c1"></span>  <span class="c1">//mount(&#34;&#34;, &#34;/&#34;, NULL, MS_PRIVATE, &#34;&#34;);
+</span><span class="c1"></span>  <span class="n">mount</span><span class="p">(</span><span class="s">&#34;none&#34;</span><span class="p">,</span> <span class="s">&#34;/tmp&#34;</span><span class="p">,</span> <span class="s">&#34;tmpfs&#34;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">);</span> <span class="c1">//重新以tmpfs(内存盘)的格式挂载/tmp目录
+</span><span class="c1"></span>  <span class="n">execv</span><span class="p">(</span><span class="n">container_args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">container_args</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&#34;Something&#39;s wrong!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// ...
+</span></code></pre></div><p>再次编译执行，发现宿主机中没有/tmp的挂载信息了。</p>
+<p>Mount Namespce与其他Namespace不同的地方，它对容器进程视图的改变，一定是有挂载操作（mount）之后才能生效。</p>
+<h2 id="chroot">chroot</h2>
+<p>当创建容器后我们希望在容器里边看到的文件系统是一个独立的隔离环境。</p>
+<p>有了Mount Namespace, 我们可以在容器进程开始前挂载根目录/, 这个挂载对宿主机是不可见的。</p>
+<p>Linux系统中有命令chroot: change root file system, 可以方便实现这一目的。</p>
+<p>我们一起来操作一下：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell"><span class="c1"># 创建目录</span>
+$ mkdir -p <span class="nv">$HOME</span>/test
+$ mkdir -p <span class="nv">$HOME</span>/test/<span class="o">{</span>lib,lib64,bin<span class="o">}</span>
+$ mkdir -p <span class="nv">$HOME</span>/test/lib/i386-linux-gnu
+<span class="c1"># 拷贝命令</span>
+$ cp -v /bin/<span class="o">{</span>bash,ls<span class="o">}</span> <span class="nv">$HOME</span>/test/bin
+<span class="c1"># 拷贝bash,ls命令所需要的所有.so文件</span>
+$ <span class="nv">T</span><span class="o">=</span><span class="nv">$HOME</span>/test
+$ <span class="nv">list</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span>ldd /bin/ls <span class="p">|</span> egrep -o <span class="s1">&#39;/lib.*\.[0-9]&#39;</span><span class="k">)</span><span class="s2">&#34;</span>
+$ <span class="k">for</span> i in list<span class="p">;</span> <span class="k">do</span> cp -v <span class="s2">&#34;</span><span class="nv">$i</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">T</span><span class="si">}${</span><span class="nv">i</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">done</span>
+$ <span class="nv">list2</span><span class="o">=</span><span class="s2">&#34;</span><span class="k">$(</span>ldd /bin/bash <span class="p">|</span> egrep -o <span class="s1">&#39;/lib.*\.[0-9]&#39;</span><span class="k">)</span><span class="s2">&#34;</span>
+$ <span class="k">for</span> i in list2<span class="p">;</span> <span class="k">do</span> co -v <span class="s2">&#34;</span><span class="nv">$i</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">T</span><span class="si">}${</span><span class="nv">i</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">done</span>
+</code></pre></div><p>最后执行chroot命令，我们将使用$HOME/test目录作为/bin/bash的根目录：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">$ chroot <span class="nv">$HOME</span>/test /bin/bash
+bash-4.3# ls /
+bin  lib  lib64
+</code></pre></div><p>对于被chroot的进程它们并不知道自己的根目录已经被“修改”了。</p>
+<p>为了让根目录更真实，我们通常会在根目录下挂载一个完整的操作系统的文件系统，比如Ubuntu16.04的ISO。</p>
+<p>这个挂载在容器根目录上，用来给容器提供隔离后执行环境的文件系统，就是“容器镜像”，也叫：rootfs（根文件系统）.</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020/12/6</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/kubernetes%E7%B3%BB%E5%88%97/">Kubernetes系列</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/posts/algorithm-bubble-sort/" class="prev" rel="prev" title="冒泡排序算法"><i class="fas fa-angle-left fa-fw"></i>冒泡排序算法</a></div>
+</div>
+</article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2019 - 2020</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="http://blog.51set.cn" target="_blank">Little Dragon</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span><span class="icp-splitter">&nbsp;|&nbsp;</span><br class="icp-br"/>
+                    <span class="icp"><a rel="" href="http://beian.miit.gov.cn/" target="_blank">沪ICP备18028210号</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.js"></script><script type="text/javascript" src="/lib/autocomplete/autocomplete.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.js"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.js"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.js"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.js"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":10},"comment":{},"search":{"highlightTag":"em","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30}};</script><script type="text/javascript" src="/js/theme.min.js"></script></body>
+</html>
