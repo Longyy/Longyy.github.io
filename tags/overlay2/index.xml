@@ -1,0 +1,15 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>overlay2 - 标签 - 破折号</title>
+        <link>http://example.org/tags/overlay2/</link>
+        <description>overlay2 - 标签 - 破折号</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
+            <webMaster>786603430@qq.com (Little Dragon)</webMaster><lastBuildDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</lastBuildDate><atom:link href="http://example.org/tags/overlay2/" rel="self" type="application/rss+xml" /><item>
+    <title>理解Docker中镜像与容器的存储引擎</title>
+    <link>http://example.org/posts/kubernetes/docker-image-container-storage-drivers/</link>
+    <pubDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</pubDate>
+    <author>作者</author>
+    <guid>http://example.org/posts/kubernetes/docker-image-container-storage-drivers/</guid>
+    <description><![CDATA[Docker提供pull/run命令来拉取镜像和运行容器，可你知道镜像被拉取下来后是如何存放的吗，一个镜像就是一个文件？如果你知道镜像的存储]]></description>
+</item></channel>
+</rss>

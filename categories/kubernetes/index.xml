@@ -11,5 +11,12 @@
     <author>作者</author>
     <guid>http://example.org/posts/kubernetes/rootfs/</guid>
     <description><![CDATA[我们知道Docker使用Namespace对容器进程进行隔离，让容器进程只能看到该Namespce内的“世界”；同时使用Cgroups来限制]]></description>
+</item><item>
+    <title>理解Docker中镜像与容器的存储引擎</title>
+    <link>http://example.org/posts/kubernetes/docker-image-container-storage-drivers/</link>
+    <pubDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</pubDate>
+    <author>作者</author>
+    <guid>http://example.org/posts/kubernetes/docker-image-container-storage-drivers/</guid>
+    <description><![CDATA[Docker提供pull/run命令来拉取镜像和运行容器，可你知道镜像被拉取下来后是如何存放的吗，一个镜像就是一个文件？如果你知道镜像的存储]]></description>
 </item></channel>
 </rss>
