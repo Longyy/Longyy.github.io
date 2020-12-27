@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>Go mod原理一次讲透 - 破折号</title><meta name="Description" content="破折号--记录成长点滴，成为更好的自已"><meta property="og:title" content="Go mod原理一次讲透" />
+<meta property="og:description" content="1.前言 说起项目依赖管理工具大家一点都不陌生，像Java的Maven、Python的Pip、Php的Composer、Nodejs的Npm这" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.51set.cn/go-mod/" />
+<meta property="article:published_time" content="2020-12-21T17:44:26+08:00" />
+<meta property="article:modified_time" content="2020-12-21T17:44:26+08:00" /><meta property="og:site_name" content="破折号" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Go mod原理一次讲透"/>
+<meta name="twitter:description" content="1.前言 说起项目依赖管理工具大家一点都不陌生，像Java的Maven、Python的Pip、Php的Composer、Nodejs的Npm这"/>
+<meta name="application-name" content="破折号">
+<meta name="apple-mobile-web-app-title" content="破折号"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="http://www.51set.cn/go-mod/" /><link rel="prev" href="http://www.51set.cn/rootfs/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.1d6e6517c44074bf1c692657d249d106a5e98bb9db25f7773715b24eda7aa575354611c095c23092aa17916f1b5be527.css" integrity="sha384-HW5lF8RAdL8caSZX0knRBqXpi7nbJfd3NxWyTtp6pXU1RhHAlcIwkqoXkW8bW&#43;Un"><link rel="stylesheet" href="/css/style.min.276e0f03323c1a097f41bcf92a0e23bc16079b9e1aae801b101c8fb90aa496875892c3263fbd90b62de11a4f7df38d3d.css" integrity="sha384-J24PAzI8Ggl/Qbz5Kg4jvBYHm54aroAbEByPuQqklodYksMmP72Qti3hGk998409"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.05f69de822c29277dc9685c53b2167960b4436bca1ae96427b6f514e27ca122c57419dfc5a1795fa2ffa6164b3933dd5.css" integrity="sha384-Bfad6CLCknfcloXFOyFnlgtENryhrpZCe29RTifKEixXQZ38WheV&#43;i/6YWSzkz3V"><link rel="stylesheet" href="/lib/animate/animate.min.eff4e5d24eb9393bc34afb6eabb68f47b69ad1a0b3ed92aa1ec6cc44bc61cee7a5756fbd319a427bd2c1d5ce5406e352.css" integrity="sha384-7/Tl0k65OTvDSvtuq7aPR7aa0aCz7ZKqHsbMRLxhzueldW&#43;9MZpCe9LB1c5UBuNS"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Go mod原理一次讲透",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "http:\/\/www.51set.cn\/go-mod\/"
+        },"genre": "posts","wordcount":  3122 ,
+        "url": "http:\/\/www.51set.cn\/go-mod\/","datePublished": "2020-12-21T17:44:26+08:00","dateModified": "2020-12-21T17:44:26+08:00","publisher": {
+            "@type": "Organization",
+            "name": ""},"author": {
+                "@type": "Person",
+                "name": "Little Dragon"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="fixed" header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('light' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'light' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="破折号">破折号</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/"> 最新 </a><a class="menu-item" href="/categories/go%E7%B3%BB%E5%88%97"> Go系列 </a><a class="menu-item" href="/categories/kubernetes%E7%B3%BB%E5%88%97"> Kubernetes系列 </a><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/go-mod/" selected>简体中文</option></select>
+                    </a><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="破折号">破折号</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/" title="">最新</a><a class="menu-item" href="/categories/go%E7%B3%BB%E5%88%97" title="">Go系列</a><a class="menu-item" href="/categories/kubernetes%E7%B3%BB%E5%88%97" title="">Kubernetes系列</a><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/go-mod/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">Go mod原理一次讲透</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="http://www.51set.cn" title="Author" target="_blank" rel="noopener noreffer author" class="author"><i class="fas fa-user-circle fa-fw"></i>Little Dragon</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/go%E7%B3%BB%E5%88%97/"><i class="far fa-folder fa-fw"></i>Go系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2020/12/21">2020/12/21</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 3122 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 7 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#1前言">1.前言</a></li>
+    <li><a href="#2go依赖管理工具发展">2.Go依赖管理工具发展</a></li>
+    <li><a href="#3各个工具主要特点对比">3.各个工具主要特点对比</a></li>
+    <li><a href="#4使用go-mod">4.使用go mod</a>
+      <ul>
+        <li><a href="#41设置环境变量">4.1.设置环境变量</a></li>
+        <li><a href="#42初始化项目">4.2.初始化项目</a></li>
+        <li><a href="#43增加依赖">4.3.增加依赖</a></li>
+        <li><a href="#44升级依赖">4.4.升级依赖</a></li>
+        <li><a href="#45gomod文件的四个关键字">4.5.go.mod文件的四个关键字</a></li>
+        <li><a href="#46提交module到github并使用">4.6.提交module到github并使用</a></li>
+      </ul>
+    </li>
+    <li><a href="#5go-mod-与go-get使用">5.Go mod 与Go get使用</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><h2 id="1前言">1.前言</h2>
+<p>说起项目依赖管理工具大家一点都不陌生，像Java的Maven、Python的Pip、Php的Composer、Nodejs的Npm这些工具大家都耳熟能详。项目依赖管理工具是项目的基石之一，它的好坏往往深刻影响着项目开发运行的效率、稳定性、扩展性、安全性等重要指标。今天我们来聊一聊Golang的包管理工具Go mod.</p>
+<p>在此之前，我们必须要熟悉两个重要的环境变量GOROOT与GOPATH.</p>
+<p><code>GOROOT</code> 指示GO的安装位置，其中有GO的原生类库(SDK)，在编译GO时需要用到；</p>
+<p><code>GOPATH</code> 指示项目代码和依赖包的位置；必须设置，但是可以随项目不同而重新设置；GOPATH下有三个目录：</p>
+<ul>
+<li>
+<p><code>src</code> 存放项目代码或依赖包源码；</p>
+</li>
+<li>
+<p><code>bin</code> 存放由<code>go install</code> 或 <code>go get</code> 编译产生的二进制文件，为方便执行，最好将<code>$GOPATH/bin</code> 加入PATH路径；</p>
+</li>
+<li>
+<p><code>pkg</code> 存放预编译产生的文件用于加速编译过程，通常我们不需要关心这个目录，它由GO自动管理；</p>
+<pre><code class="language-shell">$ echo $GOPATH
+/Users/longyongyu/Development/go/workspace
+$ tree ./pkg/darwin_amd64
+pkg/darwin_amd64
+└── github.com
+    ├── gogo
+    │   └── protobuf
+    │       ├── gogoproto.a
+    │       ├── jsonpb.a
+    │       └── proto.a
+    └── golang
+        └── protobuf
+            └── proto.a
+ $ ls -l ./bin
+ total 533296
+-rwxr-xr-x  1 longyongyu  staff   8961980 10 21 11:59 db2struct
+-rwxr-xr-x  1 longyongyu  staff  18795324  9  9 18:47 dlv
+-rwxr-xr-x  1 longyongyu  staff   5871480  6 22  2020 goimports
+-rwxr-xr-x  1 longyongyu  staff   6315432  6 22  2020 golint
+$ tree -L 2 ./src
+├── go.uber.org
+│   ├── atomic
+│   ├── multierr
+│   └── zap
+├── golang.org
+│   └── x
+├── google.golang.org
+│   ├── genproto
+│   ├── grpc
+│   └── protobuf
+</code></pre>
+</li>
+</ul>
+<p>查看当前项目的GO环境变量可以用<code>go env</code></p>
+<pre><code class="language-shell">$ go env
+GO111MODULE=&quot;on&quot;
+GOARCH=&quot;amd64&quot;
+GOBIN=&quot;&quot;
+GOCACHE=&quot;/Users/longyongyu/Library/Caches/go-build&quot;
+GOENV=&quot;/Users/longyongyu/Library/Application Support/go/env&quot;
+GOEXE=&quot;&quot;
+GOFLAGS=&quot;&quot;
+GOHOSTARCH=&quot;amd64&quot;
+GOHOSTOS=&quot;darwin&quot;
+GOINSECURE=&quot;&quot;
+GONOPROXY=&quot;xxx&quot; //去掉了敏感信息
+GONOSUMDB=&quot;yyy&quot; //去掉了敏感信息
+GOOS=&quot;darwin&quot;
+GOPATH=&quot;/Users/longyongyu/Development/go/workspace&quot;
+GOPRIVATE=&quot;zzz&quot; //去掉了敏感信息
+GOPROXY=&quot;https://goproxy.cn&quot;
+GOROOT=&quot;/usr/local/go&quot;
+GOSUMDB=&quot;sum.golang.org&quot;
+GOTMPDIR=&quot;&quot;
+GOTOOLDIR=&quot;/usr/local/go/pkg/tool/darwin_amd64&quot;
+GCCGO=&quot;gccgo&quot;
+AR=&quot;ar&quot;
+CC=&quot;clang&quot;
+CXX=&quot;clang++&quot;
+CGO_ENABLED=&quot;1&quot;
+GOMOD=&quot;/dev/null&quot;
+CGO_CFLAGS=&quot;-g -O2&quot;
+CGO_CPPFLAGS=&quot;&quot;
+CGO_CXXFLAGS=&quot;-g -O2&quot;
+CGO_FFLAGS=&quot;-g -O2&quot;
+CGO_LDFLAGS=&quot;-g -O2&quot;
+PKG_CONFIG=&quot;pkg-config&quot;
+GOGCCFLAGS=&quot;-fPIC -m64 -pthread -fno-caret-diagnostics -Qunused-arguments -fmessage-length=0\
+-fdebug-prefix-map=/var/folders/dg/b4mzy9tx1ln1y7bkblz5lvsc0000gn/T/go-build462069466=/tmp/go-build\
+-gno-record-gcc-switches -fno-common&quot;
+</code></pre>
+<p>要更改GO环境变量可以用<code>go env -w</code> 命令，如：</p>
+<pre><code class="language-shell">$ go env -w GOPROXY=test.com
+</code></pre>
+<h2 id="2go依赖管理工具发展">2.Go依赖管理工具发展</h2>
+<p>Go的包管理工具几经调整，从最开始的gopath、govender到后来的go mod, 以致go mod成为自v1.13以后的事实标准，都反映出了大家对于一款好用的包管理工具的急切渴望。下面列出其主要工具的发展过程：</p>
+<p><img src="/Users/longyongyu/Development/Blog/content/posts/Go/img/image-dev2.png" alt="image-20201222002754640" style="zoom:33%;" /></p>
+<p>V1.5之前，使用原生的<code>gopath</code> 进行包管理，要求项目源码与依赖包必须位于$GOPATH/src目录下；最大的问题，不能进行依赖包的多版本管理；</p>
+<p>V1.5, 引入<code>govendor</code> ，GO环境变量需设置<code>GO15VENDOREXPERIMENT=1</code> 在项目根目录下自动生成vendor目录并存放依赖包, GO在编译时会优先去vendor目录查询依赖；vendor对依赖包进行了分类：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>缩写</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>+local</td>
+<td>l</td>
+<td>本地包，即项目自身的包组织</td>
+</tr>
+<tr>
+<td>+external</td>
+<td>e</td>
+<td>外部包，即被 $GOPATH 管理，但不在 vendor 目录下</td>
+</tr>
+<tr>
+<td>+vendor</td>
+<td>v</td>
+<td>已被 govendor 管理，即在 vendor 目录下</td>
+</tr>
+<tr>
+<td>+std</td>
+<td>s</td>
+<td>标准库中的包</td>
+</tr>
+<tr>
+<td>+unused</td>
+<td>u</td>
+<td>未使用的包，即包在 vendor 目录下，但项目并没有用到</td>
+</tr>
+<tr>
+<td>+missing</td>
+<td>m</td>
+<td>代码引用了依赖包，但该包并没有找到</td>
+</tr>
+<tr>
+<td>+program</td>
+<td>p</td>
+<td>主程序包，意味着可以编译为执行文件</td>
+</tr>
+<tr>
+<td>+outside</td>
+<td></td>
+<td>外部包和缺失的包</td>
+</tr>
+<tr>
+<td>+all</td>
+<td></td>
+<td>所有的包</td>
+</tr>
+</tbody>
+</table>
+<p>v1.9, 引入<code>godep</code> , 在govendor的基础上，记录了依赖包的版本信息存放于项目根目录的Godep目录下，需要与vendor目录一起提交至代码库；godep常用命令：</p>
+<ul>
+<li><code>go get -u -v github.com/tools/godep</code> 安装godep；</li>
+<li><code>go get github.com/globalsign/mgo</code> 下载并安装依赖包；</li>
+<li><code>import github.com/globalsign/mgo</code> 引用依赖包；</li>
+<li><code>godep go build main.go</code> 编译项目；</li>
+<li><code>godep save</code> 更新Godeps/Godeps.json文件；</li>
+<li><code>godep restore</code> 拉取Godeps/Godeps.json文件定义的依赖包至$GOPATH/src目录下；</li>
+</ul>
+<p><a href="https://github.com/kubernetes/kubernetes/tree/release-1.13" target="_blank" rel="noopener noreffer">Kubernetes</a>早期版本就是用godep管理依赖的。</p>
+<p>v1.11, 社区推出了<code>go mod</code> 方案，目前已成为GO的主流包管理工具，且大部分GO项目已支持go mod. go mod具有几个特点：</p>
+<ul>
+<li>项目代码摆脱了对<code>$GOPATH/src</code> 目录的依赖，在此之外的任何目录都可以使用go mod;</li>
+<li>Goproxy代理协议，可以使用代理拉取依赖；</li>
+<li>go mod的Tag必须遵循<a href="https://semver.org/lang/zh-CN/" target="_blank" rel="noopener noreffer">语义化版本控制</a>, 如果没有则将忽略Tag, 转而根据commit时间与commit hash值生成一个临时的版本号；</li>
+<li>模块缓存。同一Module版本的数据只缓存一份，所有其他模块共享，目前所有模块版本数据均缓存在$GOPATH/pkg/mod下，可以使用<code>go clean -modcache</code> 清理所有Module缓存</li>
+</ul>
+<h2 id="3各个工具主要特点对比">3.各个工具主要特点对比</h2>
+<p>通常，一个好用的包管理工具应该具备下面几项能力</p>
+<ul>
+<li>依赖管理</li>
+<li>依赖包版本控制</li>
+<li>包管理平台</li>
+<li>私有化部署</li>
+<li>代码包复用</li>
+<li>支持代理（众所周知的原因）</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>依赖管理</th>
+<th>依赖包版本控制</th>
+<th>包管理平台</th>
+<th>私有化部署</th>
+<th>代码包复用</th>
+<th>支持代理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gopath</td>
+<td><strong>Y</strong></td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+</tr>
+<tr>
+<td>govendor</td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+</tr>
+<tr>
+<td>godep</td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+<td>N</td>
+</tr>
+<tr>
+<td>go mod</td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+<td><strong>Y</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="4使用go-mod">4.使用go mod</h2>
+<h3 id="41设置环境变量">4.1.设置环境变量</h3>
+<p>要使用go mod，go版本必须在v1.11及以上；然后设置必要的环境变量（小知识：使用命令<code>go help environment</code> 可以查看go支持的所有环境变量及其用法）</p>
+<pre><code class="language-shell">$ go env -w GO111MODULE=on
+$ go env -w GOPROXY=https://goproxy.cn,direct //使用七牛云的代理服务
+$ go env -w GOPATH=/Users/longyongyu/Development/go/workspace
+</code></pre>
+<p><code>go env -w</code> 会把配置写到<code>go env GOENV</code> 所配置的文件中，在我的macOS系统是<code>/Users/longyongyu/Library/Application Support/go/env</code> 文件。</p>
+<pre><code class="language-shell">$ cat /Users/longyongyu/Library/Application\ Support/go/env
+GO111MODULE=on
+GOPATH=/Users/longyongyu/Development/go/workspace
+GOPROXY=https://goproxy.cn,direct
+</code></pre>
+<p>设置<code>GO111MODULE=on</code> 表示启用go mod， 此时<code>go get</code> <code> go build</code> <code>go run</code> 等命令将被go mod接管，并在运行这些命令的时候自动维护<code>go.mod</code> <code>go.sum</code> 文件。</p>
+<p><code>goproxy</code> 用于设置依赖的代理服务。</p>
+<h3 id="42初始化项目">4.2.初始化项目</h3>
+<pre><code class="language-shell">$ mkdir gomod
+$ cd gomod
+$ go mod init gomod
+go: creating new go.mod: module gomod
+$ cat go.mod
+module gomod
+
+go 1.14
+</code></pre>
+<h3 id="43增加依赖">4.3.增加依赖</h3>
+<p>我们使用<code>go get</code> 命令为新项目添加依赖<code>gin</code>:</p>
+<pre><code class="language-shell">$ go get github.com/gin-gonic/gin
+go: github.com/gin-gonic/gin upgrade =&gt; v1.6.3
+$ cat go.mod
+module gomod
+
+go 1.14
+
+require github.com/gin-gonic/gin v1.6.3
+
+</code></pre>
+<p>我们发现新加了一行require github.com/gin-gonic/gin v1.6.3` ，其中v1.6.3 表示gin依赖的版本，go get 拉取依赖的原则是：</p>
+<ul>
+<li>若指定了版本，则拉取指定版本代码；</li>
+<li>若未指定版本，则拉取最新的release tag.</li>
+<li>若无tag, 则拉取最新的commit.</li>
+</ul>
+<h3 id="44升级依赖">4.4.升级依赖</h3>
+<p>go get 升级依赖的方法：</p>
+<ul>
+<li><code>go get -u xxx</code> 将升级到最新次要版本，或者修订版本（x.y.z中，x为主版本，y为次要版本，z为修订版本）</li>
+<li><code>go get -u=patch xxx</code> 将升级到最新的修订版本</li>
+<li><code>go get xxx@version</code> 将升级到指定的version</li>
+</ul>
+<p><code>go list -m -u all</code>列出可以升级的package</p>
+<pre><code class="language-shell">$ go list -m -u all
+gomod
+github.com/davecgh/go-spew v1.1.1
+github.com/gin-contrib/sse v0.1.0
+github.com/gin-gonic/gin v1.6.3
+github.com/go-playground/assert/v2 v2.0.1
+github.com/go-playground/locales v0.13.0
+github.com/go-playground/universal-translator v0.17.0
+github.com/go-playground/validator/v10 v10.2.0 [v10.4.1]
+github.com/golang/protobuf v1.3.3 [v1.4.3]
+github.com/google/gofuzz v1.0.0 [v1.2.0]
+github.com/json-iterator/go v1.1.9 [v1.1.10]
+github.com/leodido/go-urn v1.2.0 [v1.2.1]
+github.com/mattn/go-isatty v0.0.12
+github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 [v0.0.0-20180306012644-bacd9c7ef1dd]
+github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 [v1.0.1]
+github.com/pmezard/go-difflib v1.0.0
+...
+</code></pre>
+<p><code>go get -u xxx</code> 升级指定package</p>
+<p><code>go get -u </code> 升级所有package</p>
+<h3 id="45gomod文件的四个关键字">4.5.go.mod文件的四个关键字</h3>
+<ul>
+<li><code>module</code> 指定包的名字</li>
+<li><code>require</code> 指定具体依赖项</li>
+<li><code>replace</code> 替换依赖项</li>
+<li><code>exclude</code> 忽略依赖项</li>
+</ul>
+<p>module名用于<code>import</code> 可以是名字形式也可以是路径形式（例：github.com/golang/crypto）,这样可避免命名冲突。</p>
+<p>replace 用于替换无法直接拉取的依赖（国内朋友深有体会），该语句可以将依赖包用github上的库（或者本地私有库）进行替换。如</p>
+<pre><code>replace (
+    golang.org/x/crypto v0.0.0-20190313024323-a1f597ede03a =&gt; github.com/golang/crypto v0.0.0-20190313024323-a1f597ede03a
+)
+</code></pre>
+<p>exclude用于忽略某些依赖的版本，比如有的依赖的版本有问题。</p>
+<pre><code>exclude github.com/SermoDigital/jose v0.9.1
+</code></pre>
+<p>查看一个完整的示例</p>
+<pre><code>module github.com/example/project
+
+require (
+    github.com/SermoDigital/jose v0.0.0-20180104203859-803625baeddc
+    github.com/google/uuid v1.1.0
+)
+
+exclude github.com/SermoDigital/jose v0.9.1
+
+replace github.com/google/uuid v1.1.0 =&gt; git.coolaj86.com/coolaj86/uuid.go v1.1.1
+</code></pre>
+<h3 id="46提交module到github并使用">4.6.提交module到github并使用</h3>
+<p>这里我们演示如何创建和提交一个新的module, 然后做为本地项目的依赖项使用。</p>
+<pre><code class="language-shell">$ mkdir firstgomod
+$ cd firstgomod
+$ go mod init github.com/Longyy/firstgomod
+go: creating new go.mod: module github.com/Longyy/firstgomod
+$ touch util.go
+</code></pre>
+<p>我们在<code>util.go</code> 中实现两个方法，用来比较两个整数的大小</p>
+<pre><code class="language-go">package firstgomod
+
+func Max(x, y int) bool {
+	return x &gt; y
+}
+func Min(x, y int) bool {
+	return x &lt; y
+}
+</code></pre>
+<p>看一下go.mod的内容</p>
+<pre><code>module github.com/Longyy/firstgomod
+
+go 1.14
+</code></pre>
+<p>继续在firstgomod目录下执行命令提交firstgomod`到github</p>
+<pre><code class="language-shell">$ git init
+$ touch .gitignore
+$ echo '.idea/' &gt;&gt; .gitignore # 我IDE用的goland，.idea信息应该加入.gitignore
+$ touch README.md
+$ echo '# firstgomod' &gt;&gt; README.md
+$ git add .
+$ git commit -m 'my first go module'
+$ git remote add origin git@github.com:Longyy/firstgomod.git
+$ git branch -M main # github已推荐将主分支设置为main(而非master)
+# 先在远端先创建firstgomod项目...，然后将本地代码推送至远端
+$ git push origin main
+</code></pre>
+<p>一个全新的module制作完成，下面我们回到gomod项目来使用它</p>
+<pre><code class="language-shell">$ cd gomod
+$ go get github.com/Longyy/firstgomod
+go: downloading github.com/Longyy/firstgomod v0.0.0-20201226041745-5ea883bf90c4
+go: github.com/Longyy/firstgomod upgrade =&gt; v0.0.0-20201226041745-5ea883bf90c4
+</code></pre>
+<p>在gomod/main.go文件中使用</p>
+<pre><code class="language-go">package main
+
+import (
+	`fmt`
+
+	`github.com/Longyy/firstgomod`
+	`github.com/gin-gonic/gin`
+)
+
+func main() {
+	// 使用firstgomod
+	fmt.Println(&quot;max value is:&quot;, firstgomod.Max(1 ,2))
+
+	r := gin.Default()
+	r.GET(&quot;/test&quot;, func(context *gin.Context) {
+		context.JSON(200, gin.H{
+			&quot;msg&quot;: &quot;ok&quot;,
+		})
+	})
+	_ = r.Run(&quot;:8080&quot;)
+}
+</code></pre>
+<p>新建<code>main.go</code> 编写下面的代码</p>
+<pre><code class="language-go">package main
+
+import (
+	`github.com/gin-gonic/gin`
+)
+
+func main() {
+	//todo
+	r := gin.Default()
+	r.GET(&quot;/test&quot;, func(context *gin.Context) {
+		context.JSON(200, gin.H{
+			&quot;msg&quot;: &quot;ok&quot;,
+		})
+	})
+	_ = r.Run(&quot;:8080&quot;)
+}
+</code></pre>
+<h2 id="5go-mod-与go-get使用">5.Go mod 与Go get使用</h2>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020/12/21</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="http://www.51set.cn/go-mod/"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="分享到 WhatsApp" data-sharer="whatsapp" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透" data-web><i class="fab fa-whatsapp fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Line" data-sharer="line" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透"><i data-svg-src="/lib/simple-icons/icons/line.min.svg"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透"><i class="fab fa-weibo fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Myspace" data-sharer="myspace" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透" data-description=""><i data-svg-src="/lib/simple-icons/icons/myspace.min.svg"></i></a><a href="javascript:void(0);" title="分享到 Blogger" data-sharer="blogger" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透" data-description=""><i class="fab fa-blogger fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Evernote" data-sharer="evernote" data-url="http://www.51set.cn/go-mod/" data-title="Go mod原理一次讲透"><i class="fab fa-evernote fa-fw"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/rootfs/" class="prev" rel="prev" title="容器镜像之RootFS解析"><i class="fas fa-angle-left fa-fw"></i>容器镜像之RootFS解析</a></div>
+</div>
+<div id="comments"></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2019 - 2020</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="http://www.51set.cn" target="_blank">Little Dragon</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span><span class="icp-splitter">&nbsp;|&nbsp;</span><br class="icp-br"/>
+                    <span class="icp"><a rel="" href="http://beian.miit.gov.cn/" target="_blank">沪ICP备18028210号</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/lightgallery/lightgallery.min.ebf25e5d909c9188aa9f59f5500e439684e87553b57bdbb9d963ae8eb6851d329b2955f2837d6a308b38a956c3ad9b11.css" integrity="sha384-6/JeXZCckYiqn1n1UA5DloTodVO1e9u52WOujraFHTKbKVXyg31qMIs4qVbDrZsR"><link rel="stylesheet" href="/lib/katex/katex.min.255fb27a8827ae4a343bd61c40758c8109004c324bf2cf22bebfc454290b53eae5211c5a37591014c58f01ef58afaeeb.css" integrity="sha384-JV&#43;yeognrko0O9YcQHWMgQkATDJL8s8ivr/EVCkLU&#43;rlIRxaN1kQFMWPAe9Yr67r"><link rel="stylesheet" href="/lib/katex/copy-tex.min.5ade5917b93a802e112d44bad2a860690c161e89ed7a0ff99665c59f4524ac33389c7a0cd1c616592c18010a1ff1465c.css" integrity="sha384-Wt5ZF7k6gC4RLUS60qhgaQwWHonteg/5lmXFn0UkrDM4nHoM0cYWWSwYAQof8UZc"><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.4fc20718747ff46144177b2fd0371f2a8552aadea17b9c4e4a0bd3f993444bf5e3af9052d8a011d49f3572efd06b0d8d.js" integrity="sha384-T8IHGHR/9GFEF3sv0DcfKoVSqt6he5xOSgvT&#43;ZNES/Xjr5BS2KAR1J81cu/Qaw2N"></script><script type="text/javascript" src="/lib/autocomplete/autocomplete.min.f35302a0961c40c63ea7fff0368ccd63f2464e79b9fa3ab3dfa325269af34e87b6c444ab682194659094a6a9f51aa0a8.js" integrity="sha384-81MCoJYcQMY&#43;p//wNozNY/JGTnm5&#43;jqz36MlJprzToe2xESraCGUZZCUpqn1GqCo"></script><script type="text/javascript" src="/lib/lunr/lunr.min.bd143d6c3c84d169eefa531f9b9ec19582ced3f5dab85b8aa55b193ececa103c182a4b568b9f8acf730ff3ef83165458.js" integrity="sha384-vRQ9bDyE0Wnu&#43;lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5&#43;Kz3MP8&#43;&#43;DFlRY"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.8519327f8e0ddb51ffd37fa8972a891361693da1e7e29f7a793d3e25346fbe73335cc2ba01780a5a2cb4d3be7ada9fec.js" integrity="sha384-hRkyf44N21H/03&#43;olyqJE2FpPaHn4p96eT0&#43;JTRvvnMzXMK6AXgKWiy007562p/s"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.ae1e6ed811dfa9c546d5e8fc7998e50a35f9a9c7fd41e747ec51cefe4db5271d4e6e94d8b90c045ef2e5aab95bd37145.js" integrity="sha384-rh5u2BHfqcVG1ej8eZjlCjX5qcf9QedH7FHO/k21Jx1ObpTYuQwEXvLlqrlb03FF"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.d4df188c8b0d4510865432b2021bb3732a67fde805f31dc760ea23256a712a162dfd86f260b79f2ab409046491a29730.js" integrity="sha384-1N8YjIsNRRCGVDKyAhuzcypn/egF8x3HYOojJWpxKhYt/YbyYLefKrQJBGSRopcw"></script><script type="text/javascript" src="/lib/twemoji/twemoji.min.6af2e993b7828624a0a43bf06b837b86f83dbe3e95f6c7c59861eead590f3a55946a5012cdc3b7776c77a9c6d0aa1b07.js" integrity="sha384-avLpk7eChiSgpDvwa4N7hvg9vj6V9sfFmGHurVkPOlWUalASzcO3d2x3qcbQqhsH"></script><script type="text/javascript" src="/lib/lightgallery/lightgallery.min.7dad01b03c6f27e056a1f96a25dd0a7f2dafe87dfe60ac19b4c7bce19cb295b0a3a5b0f25163df864e8a966c8b0834a5.js" integrity="sha384-fa0BsDxvJ&#43;BWoflqJd0Kfy2v6H3&#43;YKwZtMe84ZyylbCjpbDyUWPfhk6KlmyLCDSl"></script><script type="text/javascript" src="/lib/lightgallery/lg-thumbnail.min.78321f3bd41a8aab7afb2428be333f207ab3ff04a760c56e4d0de4e2c45cb9bc32f054d41a4bad7261dec917c85c4250.js" integrity="sha384-eDIfO9Qaiqt6&#43;yQovjM/IHqz/wSnYMVuTQ3k4sRcubwy8FTUGkutcmHeyRfIXEJQ"></script><script type="text/javascript" src="/lib/lightgallery/lg-zoom.min.c092956995266849d7519491bab22df1a8bf2fbae90ea61b812acb6f08cabe81dc77b0fe9d6a62f10e818dad93cba6e2.js" integrity="sha384-wJKVaZUmaEnXUZSRurIt8ai/L7rpDqYbgSrLbwjKvoHcd7D&#43;nWpi8Q6Bja2Ty6bi"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.c7a9d14a47d2b0a181b2f94b1471cd8eef9bb92df3614ced5674d1cffd092a0388937ba54ba6cd71efef1cebd8136798.js" integrity="sha384-x6nRSkfSsKGBsvlLFHHNju&#43;buS3zYUztVnTRz/0JKgOIk3ulS6bNce/vHOvYE2eY"></script><script type="text/javascript" src="/lib/sharer/sharer.min.33a8e56039bce9774cc3cfb16a8b14a66b50356f2f03fd5123aedada43a3b1e30cc330166792d7ab98e5d7c974c832ca.js" integrity="sha384-M6jlYDm86XdMw8&#43;xaosUpmtQNW8vA/1RI67a2kOjseMMwzAWZ5LXq5jl18l0yDLK"></script><script type="text/javascript" src="/lib/katex/katex.min.cb6dc8e50ea5f81eaf6ad69f030c51bbfd282bfefd5656d2cfb43d6a249952fc9660862c77eaa3fa8db81b9654db3273.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz"></script><script type="text/javascript" src="/lib/katex/auto-render.min.9163cb51530e92ce40405af293022ea79968d26de2324907ac3d2e2781f97237868a102eb6a3f4c96d09e9da45895908.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI"></script><script type="text/javascript" src="/lib/katex/copy-tex.min.5e15807ba06d55cbc4752dc514a4fb31c7ede072633ea310be2e55e188731fd431c38f7b8c2d774eea4e12f8e820fcbb.js" integrity="sha384-XhWAe6BtVcvEdS3FFKT7Mcft4HJjPqMQvi5V4YhzH9Qxw497jC13TupOEvjoIPy7"></script><script type="text/javascript" src="/lib/katex/mhchem.min.a1ad257f10868da5352dd61c921abc2d970ff894dff1cc895deebd3ba544e94ad28735af793e8a88212526b724fecb66.js" integrity="sha384-oa0lfxCGjaU1LdYckhq8LZcP&#43;JTf8cyJXe69O6VE6UrShzWveT6KiCElJrck/stm"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":100},"comment":{},"lightGallery":{"actualSize":false,"exThumbImage":"data-thumbnail","hideBarsDelay":2000,"selector":".lightgallery","speed":400,"thumbContHeight":80,"thumbWidth":80,"thumbnail":true},"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"},"twemoji":true};</script><script type="text/javascript" src="/js/theme.min.f0e4096f68a24e87589ba7942f64874a24befc1ce05399522b0178ac9d3fb20b351b96e095dd6b5bfbe89cb6834a4b3a.js" integrity="sha384-8OQJb2iiTodYm6eUL2SHSiS&#43;/BzgU5lSKwF4rJ0/sgs1G5bgld1rW/vonLaDSks6"></script><script type="text/javascript">
+            window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());
+            gtag('config', '257166355');
+        </script><script type="text/javascript" src="https://www.googletagmanager.com/gtag/js?id=257166355" async></script></body>
+</html>

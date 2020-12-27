@@ -1,38 +1,45 @@
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
         <title>破折号</title>
-        <link>http://example.org/</link>
-        <description>破折号</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
-            <webMaster>786603430@qq.com (Little Dragon)</webMaster><lastBuildDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</lastBuildDate>
-            <atom:link href="http://example.org/index.xml" rel="self" type="application/rss+xml" />
+        <link>http://www.51set.cn/</link>
+        <description>破折号--记录成长点滴，成为更好的自已</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>longyongyu2020@gmail.com (Little Dragon)</managingEditor>
+            <webMaster>longyongyu2020@gmail.com (Little Dragon)</webMaster><lastBuildDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</lastBuildDate>
+            <atom:link href="http://www.51set.cn/index.xml" rel="self" type="application/rss+xml" />
         <item>
+    <title>Go mod原理一次讲透</title>
+    <link>http://www.51set.cn/go-mod/</link>
+    <pubDate>Mon, 21 Dec 2020 17:44:26 &#43;0800</pubDate>
+    <author>作者</author>
+    <guid>http://www.51set.cn/go-mod/</guid>
+    <description><![CDATA[1.前言 说起项目依赖管理工具大家一点都不陌生，像Java的Maven、Python的Pip、Php的Composer、Nodejs的Npm这]]></description>
+</item><item>
     <title>容器镜像之RootFS解析</title>
-    <link>http://example.org/posts/kubernetes/rootfs/</link>
+    <link>http://www.51set.cn/rootfs/</link>
     <pubDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</pubDate>
     <author>作者</author>
-    <guid>http://example.org/posts/kubernetes/rootfs/</guid>
+    <guid>http://www.51set.cn/rootfs/</guid>
     <description><![CDATA[我们知道Docker使用Namespace对容器进程进行隔离，让容器进程只能看到该Namespce内的“世界”；同时使用Cgroups来限制]]></description>
 </item><item>
     <title>理解Docker中镜像与容器的存储引擎</title>
-    <link>http://example.org/posts/kubernetes/docker-image-container-storage-drivers/</link>
+    <link>http://www.51set.cn/docker-image-container-storage-drivers/</link>
     <pubDate>Sun, 06 Dec 2020 17:44:26 &#43;0800</pubDate>
     <author>作者</author>
-    <guid>http://example.org/posts/kubernetes/docker-image-container-storage-drivers/</guid>
+    <guid>http://www.51set.cn/docker-image-container-storage-drivers/</guid>
     <description><![CDATA[Docker提供pull/run命令来拉取镜像和运行容器，可你知道镜像被拉取下来后是如何存放的吗，一个镜像就是一个文件？如果你知道镜像的存储]]></description>
 </item><item>
     <title>冒泡排序算法</title>
-    <link>http://example.org/posts/algorithm-bubble-sort/</link>
+    <link>http://www.51set.cn/algorithm-bubble-sort/</link>
     <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
     <author>作者</author>
-    <guid>http://example.org/posts/algorithm-bubble-sort/</guid>
-    <description><![CDATA[#冒泡排序算法 package main import &#34;fmt&#34; //冒泡排序 func BubbleSort(a []int32, n int32) { //循环每一轮后，有序序列长度加一 for i := int32(0); i &lt; n; i++ { //记录每一轮是否有数据交换 flag := false //从头]]></description>
+    <guid>http://www.51set.cn/algorithm-bubble-sort/</guid>
+    <description><![CDATA[#冒泡排序算法 package main import &quot;fmt&quot; //冒泡排序 func BubbleSort(a []int32, n int32) { //循环每一轮后，有序序列长度加一 for i := int32(0); i &lt; n; i++ { //记录每一轮是否有数据交换 flag := false //从头]]></description>
 </item><item>
     <title>插入排序算法</title>
-    <link>http://example.org/posts/algorithm-insertion-sort/</link>
+    <link>http://www.51set.cn/algorithm-insertion-sort/</link>
     <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
     <author>作者</author>
-    <guid>http://example.org/posts/algorithm-insertion-sort/</guid>
-    <description><![CDATA[插入排序算法 package main import &#34;fmt&#34; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历后]]></description>
+    <guid>http://www.51set.cn/algorithm-insertion-sort/</guid>
+    <description><![CDATA[插入排序算法 package main import &quot;fmt&quot; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历后]]></description>
 </item></channel>
 </rss>

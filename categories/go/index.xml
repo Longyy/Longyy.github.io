@@ -1,0 +1,15 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>Go - 分类 - 破折号</title>
+        <link>http://www.51set.cn/categories/go/</link>
+        <description>Go - 分类 - 破折号</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
+            <webMaster>786603430@qq.com (Little Dragon)</webMaster><lastBuildDate>Mon, 21 Dec 2020 17:44:26 &#43;0800</lastBuildDate><atom:link href="http://www.51set.cn/categories/go/" rel="self" type="application/rss+xml" /><item>
+    <title>Go mod原理一次讲透</title>
+    <link>http://www.51set.cn/posts/go/go-mod/</link>
+    <pubDate>Mon, 21 Dec 2020 17:44:26 &#43;0800</pubDate>
+    <author>作者</author>
+    <guid>http://www.51set.cn/posts/go/go-mod/</guid>
+    <description><![CDATA[说起项目依赖管理工具大家一点都不陌生，像Java的Maven、Python的Pip、Php的Composer、Nodejs的Npm这些工具大]]></description>
+</item></channel>
+</rss>

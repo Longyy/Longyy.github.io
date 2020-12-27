@@ -2,14 +2,14 @@
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	
 	<sitemap>
-	   	<loc>http://example.org/en/sitemap.xml</loc>
+	   	<loc>http://www.51set.cn/zh-cn/sitemap.xml</loc>
+		
+	   	<lastmod>2020-12-21T17:44:26+08:00</lastmod>
 		
 	</sitemap>
 	
 	<sitemap>
-	   	<loc>http://example.org/zh-cn/sitemap.xml</loc>
-		
-	   	<lastmod>2020-12-06T17:44:26+08:00</lastmod>
+	   	<loc>http://www.51set.cn/en/sitemap.xml</loc>
 		
 	</sitemap>
 	

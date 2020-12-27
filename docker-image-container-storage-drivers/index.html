@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+        <title>理解Docker中镜像与容器的存储引擎 - 破折号</title><meta name="Description" content="破折号--记录成长点滴，成为更好的自已"><meta property="og:title" content="理解Docker中镜像与容器的存储引擎" />
+<meta property="og:description" content="Docker提供pull/run命令来拉取镜像和运行容器，可你知道镜像被拉取下来后是如何存放的吗，一个镜像就是一个文件？如果你知道镜像的存储" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.51set.cn/docker-image-container-storage-drivers/" />
+<meta property="article:published_time" content="2020-12-06T17:44:26+08:00" />
+<meta property="article:modified_time" content="2020-12-06T17:44:26+08:00" /><meta property="og:site_name" content="破折号" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="理解Docker中镜像与容器的存储引擎"/>
+<meta name="twitter:description" content="Docker提供pull/run命令来拉取镜像和运行容器，可你知道镜像被拉取下来后是如何存放的吗，一个镜像就是一个文件？如果你知道镜像的存储"/>
+<meta name="application-name" content="破折号">
+<meta name="apple-mobile-web-app-title" content="破折号"><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="http://www.51set.cn/docker-image-container-storage-drivers/" /><link rel="prev" href="http://www.51set.cn/algorithm-bubble-sort/" /><link rel="next" href="http://www.51set.cn/rootfs/" /><link rel="stylesheet" href="/lib/normalize/normalize.min.1d6e6517c44074bf1c692657d249d106a5e98bb9db25f7773715b24eda7aa575354611c095c23092aa17916f1b5be527.css" integrity="sha384-HW5lF8RAdL8caSZX0knRBqXpi7nbJfd3NxWyTtp6pXU1RhHAlcIwkqoXkW8bW&#43;Un"><link rel="stylesheet" href="/css/style.min.276e0f03323c1a097f41bcf92a0e23bc16079b9e1aae801b101c8fb90aa496875892c3263fbd90b62de11a4f7df38d3d.css" integrity="sha384-J24PAzI8Ggl/Qbz5Kg4jvBYHm54aroAbEByPuQqklodYksMmP72Qti3hGk998409"><link rel="stylesheet" href="/lib/fontawesome-free/all.min.05f69de822c29277dc9685c53b2167960b4436bca1ae96427b6f514e27ca122c57419dfc5a1795fa2ffa6164b3933dd5.css" integrity="sha384-Bfad6CLCknfcloXFOyFnlgtENryhrpZCe29RTifKEixXQZ38WheV&#43;i/6YWSzkz3V"><link rel="stylesheet" href="/lib/animate/animate.min.eff4e5d24eb9393bc34afb6eabb68f47b69ad1a0b3ed92aa1ec6cc44bc61cee7a5756fbd319a427bd2c1d5ce5406e352.css" integrity="sha384-7/Tl0k65OTvDSvtuq7aPR7aa0aCz7ZKqHsbMRLxhzueldW&#43;9MZpCe9LB1c5UBuNS"><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "理解Docker中镜像与容器的存储引擎",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "http:\/\/www.51set.cn\/docker-image-container-storage-drivers\/"
+        },"genre": "posts","keywords": "overlay2","wordcount":  2578 ,
+        "url": "http:\/\/www.51set.cn\/docker-image-container-storage-drivers\/","datePublished": "2020-12-06T17:44:26+08:00","dateModified": "2020-12-06T17:44:26+08:00","publisher": {
+            "@type": "Organization",
+            "name": ""},"author": {
+                "@type": "Person",
+                "name": "Little Dragon"
+            },"description": ""
+    }
+    </script></head>
+    <body header-desktop="fixed" header-mobile="auto"><script type="text/javascript">(window.localStorage && localStorage.getItem('theme') ? localStorage.getItem('theme') === 'dark' : ('light' === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches : 'light' === 'dark')) && document.body.setAttribute('theme', 'dark');</script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="破折号">破折号</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/"> 最新 </a><a class="menu-item" href="/categories/go%E7%B3%BB%E5%88%97"> Go系列 </a><a class="menu-item" href="/categories/kubernetes%E7%B3%BB%E5%88%97"> Kubernetes系列 </a><a class="menu-item" href="/posts/"> 文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><span class="menu-item delimiter"></span><a href="javascript:void(0);" class="menu-item language" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                        <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/docker-image-container-storage-drivers/" selected>简体中文</option></select>
+                    </a><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="破折号">破折号</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/" title="">最新</a><a class="menu-item" href="/categories/go%E7%B3%BB%E5%88%97" title="">Go系列</a><a class="menu-item" href="/categories/kubernetes%E7%B3%BB%E5%88%97" title="">Kubernetes系列</a><a class="menu-item" href="/posts/" title="">文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">简体中文<i class="fas fa-chevron-right fa-fw"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/docker-image-container-storage-drivers/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header>
+<div class="search-dropdown desktop">
+    <div id="search-dropdown-desktop"></div>
+</div>
+<div class="search-dropdown mobile">
+    <div id="search-dropdown-mobile"></div>
+</div>
+<main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animated flipInX">理解Docker中镜像与容器的存储引擎</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="http://www.51set.cn" title="Author" target="_blank" rel="noopener noreffer author" class="author"><i class="fas fa-user-circle fa-fw"></i>Little Dragon</a></span>&nbsp;<span class="post-category">收录于 <a href="/categories/kubernetes%E7%B3%BB%E5%88%97/"><i class="far fa-folder fa-fw"></i>Kubernetes系列</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw"></i>&nbsp;<time datetime="2020/12/6">2020/12/6</time>&nbsp;<i class="fas fa-pencil-alt fa-fw"></i>&nbsp;约 2578 字&nbsp;
+                <i class="far fa-clock fa-fw"></i>&nbsp;预计阅读 6 分钟&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#一获取docker存储关键信息">一、获取docker存储关键信息</a></li>
+    <li><a href="#二理解overlay2存储引擎">二、理解overlay2存储引擎</a></li>
+    <li><a href="#三container对overlay2上文件的读写">三、Container对Overlay2上文件的读写</a>
+      <ul>
+        <li><a href="#1read">1.Read</a></li>
+        <li><a href="#2write">2.Write</a></li>
+      </ul>
+    </li>
+    <li><a href="#四总结">四、总结</a></li>
+  </ul>
+</nav></div>
+            </div><div class="content" id="content"><p>Docker提供pull/run命令来拉取镜像和运行容器，可你知道镜像被拉取下来后是如何存放的吗，一个镜像就是一个文件？如果你知道镜像的存储格式或者对RootFS有所了解，那么你显然会说：No. 下面我们来一步一步看看究竟是怎么一回事。</p>
+<p>演示环境：ubuntu 16.04 / docker 20.10.0</p>
+<h2 id="一获取docker存储关键信息">一、获取docker存储关键信息</h2>
+<p>执行</p>
+<pre><code class="language-shell">$ docker info
+...
+Storage Driver: overlay2
+  Backing Filesystem: extfs
+Docker Root Dir: /var/lib/docker
+...
+</code></pre>
+<p>在输出信息中找到<strong>Storage Driver</strong>、<strong>Docker Root Dir</strong>、<strong>Backing Filesystem</strong>三个配置项，合起来的意思是说，docker的存储路径是<code>/var/lib/docker</code>，该路径下的文件格式为<code>extfs</code>，使用的存储引擎是<code>overlay2</code>.</p>
+<p>不同操作系统中Docker存储路径有所不同：</p>
+<ul>
+<li>Ubuntu: <code>/var/lib/docker/</code></li>
+<li>Fedora: <code>/var/lib/docker/</code></li>
+<li>Debian: <code>/var/lib/docker/</code></li>
+<li>Windows: <code>C:\ProgramData\DockerDesktop</code></li>
+<li>MacOS: <code>~/Library/Containers/com.docker.docker/Data/vms/0/</code></li>
+</ul>
+<p>Docker Engine - Community (社区版)， 在Linux的不同发行版上推荐的存储引擎如下表：</p>
+<table>
+<thead>
+<tr>
+<th><strong>Linux distribution</strong></th>
+<th><strong>Recommended storage drivers</strong></th>
+<th><strong>Alternative drivers</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Docker Engine - Community on Ubuntu</td>
+<td><code>overlay2</code> or <code>aufs</code> (for Ubuntu 14.04 running on kernel 3.13)</td>
+<td><code>overlay</code>¹, <code>devicemapper</code>², <code>zfs</code>, <code>vfs</code></td>
+</tr>
+<tr>
+<td>Docker Engine - Community on Debian</td>
+<td><code>overlay2</code> (Debian Stretch), <code>aufs</code> or <code>devicemapper</code> (older versions)</td>
+<td>overlay<code>¹, </code>vfs</td>
+</tr>
+<tr>
+<td>Docker Engine - Community on CentOS</td>
+<td>overlay2</td>
+<td>overlay<code>¹, </code>devicemapper<code>², </code>zfs<code>, </code>vfs</td>
+</tr>
+<tr>
+<td>Docker Engine - Community on Fedora</td>
+<td>overlay2</td>
+<td>overlay<code>¹, </code>devicemapper<code>², </code>zfs<code>, </code>vfs</td>
+</tr>
+</tbody>
+</table>
+<p>¹) The <code>overlay</code> 引擎已被废弃，推荐使用 <code>overlay2</code>.</p>
+<p>²) The <code>devicemapper</code> 引擎已被废弃，推荐使用 <code>overlay2</code>.</p>
+<p>OverlayFS是一种堆叠文件系统（联合文件系统），它依赖并建立在其它的文件系统之上（例如ext4fs和xfs等等），并不直接参与磁盘空间结构的划分，仅仅将原来底层文件系统中不同的目录进行“合并”，然后向用户呈现。因此对于用户来说，它所见到的overlay文件系统根目录下的内容就来自挂载时所指定的不同目录的“合集”。</p>
+<p>Docker为OverlayFS提供了两个存储引擎，原始的Overlay和更稳定的Overlay2.</p>
+<p>当前安装Docker时，<strong><code>overlay2</code>已经是默认的存储引擎了</strong>, 在此之前<code>aufs</code>是默认引擎，<a href="https://docs.docker.com/storage/storagedriver/aufs-driver/" target="_blank" rel="noopener noreffer">点此获取关于<code>aufs</code>的更多信息</a></p>
+<p>Backing Filesystem与存储引擎的对应关系：</p>
+<table>
+<thead>
+<tr>
+<th align="left">Storage driver</th>
+<th align="left">Supported backing filesystems</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>overlay2</code>, <code>overlay</code></td>
+<td align="left"><code>xfs</code> with ftype=1, <code>ext4</code></td>
+</tr>
+<tr>
+<td align="left"><code>fuse-overlayfs</code></td>
+<td align="left">any filesystem</td>
+</tr>
+<tr>
+<td align="left"><code>aufs</code></td>
+<td align="left"><code>xfs</code>, <code>ext4</code></td>
+</tr>
+<tr>
+<td align="left"><code>devicemapper</code></td>
+<td align="left"><code>direct-lvm</code></td>
+</tr>
+<tr>
+<td align="left"><code>btrfs</code></td>
+<td align="left"><code>btrfs</code></td>
+</tr>
+<tr>
+<td align="left"><code>zfs</code></td>
+<td align="left"><code>zfs</code></td>
+</tr>
+<tr>
+<td align="left"><code>vfs</code></td>
+<td align="left">any filesystem</td>
+</tr>
+</tbody>
+</table>
+<h2 id="二理解overlay2存储引擎">二、理解overlay2存储引擎</h2>
+<p>OverlayFS在单个Linux主机上将两个目录合并成一个目录，这些目录叫做<strong>Layers</strong>（层），这个过程叫做<strong>Union mount</strong>（联合挂载）,将较低的目录叫做<strong>lowerdir</strong>, 较高的目录叫做<strong>upperdir</strong>,合并后的目录通过<strong>merged</strong>目录暴露。</p>
+<p>OverlayFS原生支持128层的<code>lowerdir</code>,将提升<code>docker build</code> <code>docker commit</code>的性能，并在主机文件系统上消耗更少的inode.</p>
+<p>我们首先拉取示例镜像<code>docker pull ubuntu</code>,该镜像包含三个层，在<code>/var/lib/docker/overlay2</code>目录下可见4个文件。</p>
+<pre><code class="language-shell">$ ls -l /var/lib/docker/overlay2
+total 16
+drwx------ 4 root root 4096 Dec 14 18:48 6bcbe401bf9563cef765537d56d6b41614916fea9c9a4a04da7740df22be2b0a
+drwx------ 3 root root 4096 Dec 14 18:48 ec043c375f562d2450b6ec600df751d3c175d45928d65bbec06f29de2021c022
+drwx------ 4 root root 4096 Dec 14 18:48 fdb1a5544aa14447881a4168a34715387a4e1eb2d4bead7111987cc8eb779498
+drwx------ 2 root root 4096 Dec 14 18:48 l
+</code></pre>
+<p><code>l</code>目录下以符号链接的方式重新组织了层信息，避免<code>mount</code>参数超限。</p>
+<pre><code class="language-shell">$ ls -l /var/lib/docker/overlay2/l
+total 12
+lrwxrwxrwx 1 root root 72 Dec 14 18:48 4BXWJGCYLNYIKGVSNAC2FTDV7C -&gt; ../fdb1a5544aa14447881a4168a34715387a4e1eb2d4bead7111987cc8eb779498/diff
+lrwxrwxrwx 1 root root 72 Dec 14 18:48 HS3PTDGILSMO7PRIHEHCPO2FGU -&gt; ../ec043c375f562d2450b6ec600df751d3c175d45928d65bbec06f29de2021c022/diff
+lrwxrwxrwx 1 root root 72 Dec 14 18:48 U6CEQQLZFHHVL62ROBOALZJUSR -&gt; ../6bcbe401bf9563cef765537d56d6b41614916fea9c9a4a04da7740df22be2b0a/diff
+</code></pre>
+<p>最底层包含一个文件<code>link</code>和一个目录<code>diff</code>, <code>link</code>文件里存放了符号链接的标识符，<code>diff</code>目录下存放层内容。</p>
+<pre><code class="language-shell">$ cat /var/lib/docker/overlay2/ec043c375f562d2450b6ec600df751d3c175d45928d65bbec06f29de2021c022/link
+HS3PTDGILSMO7PRIHEHCPO2FGU
+$ ls /var/lib/docker/overlay2/ec043c375f562d2450b6ec600df751d3c175d45928d65bbec06f29de2021c022/diff
+bin  boot  dev  etc  home  lib  lib32  lib64  libx32  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+</code></pre>
+<p>倒数第二层及上面各层均含有<code>lower</code>文件，存放着联合挂载信息；<code>diff</code>目录包含有该层文件内容；<code>merge</code>目录包含该层与父级目录合并后的文件内容。<code>work</code>目录是OverlayFS内置的。</p>
+<pre><code class="language-shell">$ tree -L 2 /var/lib/docker/overlay2/
+/var/lib/docker/overlay2/
+├── 6bcbe401bf9563cef765537d56d6b41614916fea9c9a4a04da7740df22be2b0a
+│   ├── diff
+│   ├── link
+│   ├── lower
+│   └── work
+├── ec043c375f562d2450b6ec600df751d3c175d45928d65bbec06f29de2021c022
+│   ├── committed
+│   ├── diff
+│   └── link
+├── fdb1a5544aa14447881a4168a34715387a4e1eb2d4bead7111987cc8eb779498
+│   ├── committed
+│   ├── diff
+│   ├── link
+│   ├── lower
+│   └── work
+└── l
+    ├── 4BXWJGCYLNYIKGVSNAC2FTDV7C -&gt; ../fdb1a5544aa14447881a4168a34715387a4e1eb2d4bead7111987cc8eb779498/diff
+    ├── HS3PTDGILSMO7PRIHEHCPO2FGU -&gt; ../ec043c375f562d2450b6ec600df751d3c175d45928d65bbec06f29de2021c022/diff
+    └── U6CEQQLZFHHVL62ROBOALZJUSR -&gt; ../6bcbe401bf9563cef765537d56d6b41614916fea9c9a4a04da7740df22be2b0a/diff
+    
+$ cat /var/lib/docker/overlay2/fdb1a5544aa14447881a4168a34715387a4e1eb2d4bead7111987cc8eb779498/lower
+l/HS3PTDGILSMO7PRIHEHCPO2FGU
+
+$ ls /var/lib/docker/overlay2/fdb1a5544aa14447881a4168a34715387a4e1eb2d4bead7111987cc8eb779498/diff
+etc  usr  var
+</code></pre>
+<p>当容器启动后，Docker会使用Overlay2引擎挂载容器目录。我们运行<code>docker run</code>命令看一下实际效果</p>
+<pre><code class="language-SHELL">$ docker run -d ubuntu:latest sleep 3600
+566450ecf2684dc2a033beb49b34cce92d003674ec5a8d606810d2b68fa489de
+</code></pre>
+<pre><code class="language-shell">$ mount | grep overlay2
+overlay on /var/lib/docker/overlay2/fea4e43477579fa2e2f5a4b287592e9319a8c17c5e3d659199ba56b02f580ef9/merged type overlay (rw,relatime,
+lowerdir=/var/lib/docker/overlay2/l/H3E7H2MFUWPVV3NLOJBVDFJED3:/var/lib/docker/overlay2/l/J3EFNT6RSZDLTHG524LM42JLJT:/var/lib/docker/overlay2/l/TDFRV2Z66UAACTA3KP5KLQLADK:/var/lib/docker/overlay2/l/ALV2R4IDYWACLQRARWKANDDPW7,
+upperdir=/var/lib/docker/overlay2/fea4e43477579fa2e2f5a4b287592e9319a8c17c5e3d659199ba56b02f580ef9/diff,
+workdir=/var/lib/docker/overlay2/fea4e43477579fa2e2f5a4b287592e9319a8c17c5e3d659199ba56b02f580ef9/work)
+</code></pre>
+<p>第二行中<code>rw</code>表示该挂载目录可读可写。</p>
+<p><code>/var/lib/docker/overlay2/fea4e43477579fa2e2f5a4b287592e9319a8c17c5e3d659199ba56b02f580ef9/merged</code>目录即是联合挂载后的<code>视图</code>，也就是在容器中看到的文件结构。容器有多个<code>lowerdir</code>（只读层），只有一个<code>upperdir</code>（可读写层），当在容器中真正<code>更新</code> <code>创建</code> <code>删除</code> 文件时，内容都保存在<code>upperdir</code> 目录中。</p>
+<h2 id="三container对overlay2上文件的读写">三、Container对Overlay2上文件的读写</h2>
+<p>下图是docker存储结构与OverlayFS存储结构的映射关系</p>
+<p><img
+        class="lazyload"
+        src="/svg/loading.min.svg"
+        data-src="https://docs.docker.com/storage/storagedriver/images/overlay_constructs.jpg"
+        data-srcset="https://docs.docker.com/storage/storagedriver/images/overlay_constructs.jpg, https://docs.docker.com/storage/storagedriver/images/overlay_constructs.jpg 1.5x, https://docs.docker.com/storage/storagedriver/images/overlay_constructs.jpg 2x"
+        data-sizes="auto"
+        alt="https://docs.docker.com/storage/storagedriver/images/overlay_constructs.jpg"
+        title="overlayfs lowerdir, upperdir, merged" /></p>
+<h3 id="1read">1.Read</h3>
+<ul>
+<li>文件在Container layer不存在，则从Image layer读取；（file1）</li>
+<li>文件在Container layer存在，则直接从Container layer读取（file2, file4）</li>
+</ul>
+<h3 id="2write">2.Write</h3>
+<ul>
+<li><strong>第一次写入一个文件</strong>。如果文件已存在，但并不存在于Container layer中，则overlay会进行一次copy_up操作，先将文件内容从Image layer(lowerdir)拷贝到Container layer(upperdir)中，然后对Container layer上的文件进行写入操作。</li>
+</ul>
+<blockquote>
+<p>OverlayFS是工作在文件级别的，而不是块级别的，因此copy_up操作会将整个文件进行一次拷贝，即使这个文件非常大而我们只修改一个小地方。因此container的第一次写性能还是有一定损耗的。</p>
+</blockquote>
+<ul>
+<li>
+<p><strong>其他时间写入文件</strong>。则直接操作Container layer中对应文件。</p>
+</li>
+<li>
+<p><strong>删除文件和目录</strong>。当删除文件时，Container layer中建立一个<code>whiteout</code>文件，而Image layer中该文件不会被删除，因为是Read-Only的。<code>Whiteout</code>文件会阻止对此文件的访问。</p>
+</li>
+<li>
+<p>当我们删除目录时，会建立一个<code>opaque</code>目录。</p>
+</li>
+</ul>
+<h2 id="四总结">四、总结</h2>
+<p>我们可以把层看作是有文件的目录，多个目录间有至上而下的依赖关系，然后通过联合挂载的文式<code>合并</code>成一个视图（目录），再将这个合并后的目录以RootFS方式挂载到docker容器进程中去。</p>
+<p>我们的写操作都在Container layer层上进行，不会影响镜像层。另外，我们在容器里边删除Image layer中文件，并不是真正的删除，而是建立一个<code>whiteout</code>文件（套用大V的话来说就叫：白障）来阻止对相应文件的访问。</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2020/12/6</span>
+            </div>
+            <div class="post-info-license"></div>
+        </div>
+        <div class="post-info-line">
+            <div class="post-info-md"></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 Twitter" data-sharer="twitter" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎" data-hashtags="overlay2"><i class="fab fa-twitter fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-hashtag="overlay2"><i class="fab fa-facebook-square fa-fw"></i></a><a href="javascript:void(0);" title="分享到 WhatsApp" data-sharer="whatsapp" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎" data-web><i class="fab fa-whatsapp fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Line" data-sharer="line" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎"><i data-svg-src="/lib/simple-icons/icons/line.min.svg"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎"><i class="fab fa-weibo fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Myspace" data-sharer="myspace" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎" data-description=""><i data-svg-src="/lib/simple-icons/icons/myspace.min.svg"></i></a><a href="javascript:void(0);" title="分享到 Blogger" data-sharer="blogger" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎" data-description=""><i class="fab fa-blogger fa-fw"></i></a><a href="javascript:void(0);" title="分享到 Evernote" data-sharer="evernote" data-url="http://www.51set.cn/docker-image-container-storage-drivers/" data-title="理解Docker中镜像与容器的存储引擎"><i class="fab fa-evernote fa-fw"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"><i class="fas fa-tags fa-fw"></i>&nbsp;<a href="/tags/overlay2/">overlay2</a></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/algorithm-bubble-sort/" class="prev" rel="prev" title="冒泡排序算法"><i class="fas fa-angle-left fa-fw"></i>冒泡排序算法</a>
+            <a href="/rootfs/" class="next" rel="next" title="容器镜像之RootFS解析">容器镜像之RootFS解析<i class="fas fa-angle-right fa-fw"></i></a></div>
+</div>
+<div id="comments"></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line"><i class="far fa-copyright fa-fw"></i><span itemprop="copyrightYear">2019 - 2020</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="http://www.51set.cn" target="_blank">Little Dragon</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span><span class="icp-splitter">&nbsp;|&nbsp;</span><br class="icp-br"/>
+                    <span class="icp"><a rel="" href="http://beian.miit.gov.cn/" target="_blank">沪ICP备18028210号</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw"></i>
+            </a><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/lightgallery/lightgallery.min.ebf25e5d909c9188aa9f59f5500e439684e87553b57bdbb9d963ae8eb6851d329b2955f2837d6a308b38a956c3ad9b11.css" integrity="sha384-6/JeXZCckYiqn1n1UA5DloTodVO1e9u52WOujraFHTKbKVXyg31qMIs4qVbDrZsR"><link rel="stylesheet" href="/lib/katex/katex.min.255fb27a8827ae4a343bd61c40758c8109004c324bf2cf22bebfc454290b53eae5211c5a37591014c58f01ef58afaeeb.css" integrity="sha384-JV&#43;yeognrko0O9YcQHWMgQkATDJL8s8ivr/EVCkLU&#43;rlIRxaN1kQFMWPAe9Yr67r"><link rel="stylesheet" href="/lib/katex/copy-tex.min.5ade5917b93a802e112d44bad2a860690c161e89ed7a0ff99665c59f4524ac33389c7a0cd1c616592c18010a1ff1465c.css" integrity="sha384-Wt5ZF7k6gC4RLUS60qhgaQwWHonteg/5lmXFn0UkrDM4nHoM0cYWWSwYAQof8UZc"><script type="text/javascript" src="/lib/smooth-scroll/smooth-scroll.min.4fc20718747ff46144177b2fd0371f2a8552aadea17b9c4e4a0bd3f993444bf5e3af9052d8a011d49f3572efd06b0d8d.js" integrity="sha384-T8IHGHR/9GFEF3sv0DcfKoVSqt6he5xOSgvT&#43;ZNES/Xjr5BS2KAR1J81cu/Qaw2N"></script><script type="text/javascript" src="/lib/autocomplete/autocomplete.min.f35302a0961c40c63ea7fff0368ccd63f2464e79b9fa3ab3dfa325269af34e87b6c444ab682194659094a6a9f51aa0a8.js" integrity="sha384-81MCoJYcQMY&#43;p//wNozNY/JGTnm5&#43;jqz36MlJprzToe2xESraCGUZZCUpqn1GqCo"></script><script type="text/javascript" src="/lib/lunr/lunr.min.bd143d6c3c84d169eefa531f9b9ec19582ced3f5dab85b8aa55b193ececa103c182a4b568b9f8acf730ff3ef83165458.js" integrity="sha384-vRQ9bDyE0Wnu&#43;lMfm57BlYLO0/XauFuKpVsZPs7KEDwYKktWi5&#43;Kz3MP8&#43;&#43;DFlRY"></script><script type="text/javascript" src="/lib/lunr/lunr.stemmer.support.min.8519327f8e0ddb51ffd37fa8972a891361693da1e7e29f7a793d3e25346fbe73335cc2ba01780a5a2cb4d3be7ada9fec.js" integrity="sha384-hRkyf44N21H/03&#43;olyqJE2FpPaHn4p96eT0&#43;JTRvvnMzXMK6AXgKWiy007562p/s"></script><script type="text/javascript" src="/lib/lunr/lunr.zh.min.ae1e6ed811dfa9c546d5e8fc7998e50a35f9a9c7fd41e747ec51cefe4db5271d4e6e94d8b90c045ef2e5aab95bd37145.js" integrity="sha384-rh5u2BHfqcVG1ej8eZjlCjX5qcf9QedH7FHO/k21Jx1ObpTYuQwEXvLlqrlb03FF"></script><script type="text/javascript" src="/lib/lazysizes/lazysizes.min.d4df188c8b0d4510865432b2021bb3732a67fde805f31dc760ea23256a712a162dfd86f260b79f2ab409046491a29730.js" integrity="sha384-1N8YjIsNRRCGVDKyAhuzcypn/egF8x3HYOojJWpxKhYt/YbyYLefKrQJBGSRopcw"></script><script type="text/javascript" src="/lib/twemoji/twemoji.min.6af2e993b7828624a0a43bf06b837b86f83dbe3e95f6c7c59861eead590f3a55946a5012cdc3b7776c77a9c6d0aa1b07.js" integrity="sha384-avLpk7eChiSgpDvwa4N7hvg9vj6V9sfFmGHurVkPOlWUalASzcO3d2x3qcbQqhsH"></script><script type="text/javascript" src="/lib/lightgallery/lightgallery.min.7dad01b03c6f27e056a1f96a25dd0a7f2dafe87dfe60ac19b4c7bce19cb295b0a3a5b0f25163df864e8a966c8b0834a5.js" integrity="sha384-fa0BsDxvJ&#43;BWoflqJd0Kfy2v6H3&#43;YKwZtMe84ZyylbCjpbDyUWPfhk6KlmyLCDSl"></script><script type="text/javascript" src="/lib/lightgallery/lg-thumbnail.min.78321f3bd41a8aab7afb2428be333f207ab3ff04a760c56e4d0de4e2c45cb9bc32f054d41a4bad7261dec917c85c4250.js" integrity="sha384-eDIfO9Qaiqt6&#43;yQovjM/IHqz/wSnYMVuTQ3k4sRcubwy8FTUGkutcmHeyRfIXEJQ"></script><script type="text/javascript" src="/lib/lightgallery/lg-zoom.min.c092956995266849d7519491bab22df1a8bf2fbae90ea61b812acb6f08cabe81dc77b0fe9d6a62f10e818dad93cba6e2.js" integrity="sha384-wJKVaZUmaEnXUZSRurIt8ai/L7rpDqYbgSrLbwjKvoHcd7D&#43;nWpi8Q6Bja2Ty6bi"></script><script type="text/javascript" src="/lib/clipboard/clipboard.min.c7a9d14a47d2b0a181b2f94b1471cd8eef9bb92df3614ced5674d1cffd092a0388937ba54ba6cd71efef1cebd8136798.js" integrity="sha384-x6nRSkfSsKGBsvlLFHHNju&#43;buS3zYUztVnTRz/0JKgOIk3ulS6bNce/vHOvYE2eY"></script><script type="text/javascript" src="/lib/sharer/sharer.min.33a8e56039bce9774cc3cfb16a8b14a66b50356f2f03fd5123aedada43a3b1e30cc330166792d7ab98e5d7c974c832ca.js" integrity="sha384-M6jlYDm86XdMw8&#43;xaosUpmtQNW8vA/1RI67a2kOjseMMwzAWZ5LXq5jl18l0yDLK"></script><script type="text/javascript" src="/lib/katex/katex.min.cb6dc8e50ea5f81eaf6ad69f030c51bbfd282bfefd5656d2cfb43d6a249952fc9660862c77eaa3fa8db81b9654db3273.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz"></script><script type="text/javascript" src="/lib/katex/auto-render.min.9163cb51530e92ce40405af293022ea79968d26de2324907ac3d2e2781f97237868a102eb6a3f4c96d09e9da45895908.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI"></script><script type="text/javascript" src="/lib/katex/copy-tex.min.5e15807ba06d55cbc4752dc514a4fb31c7ede072633ea310be2e55e188731fd431c38f7b8c2d774eea4e12f8e820fcbb.js" integrity="sha384-XhWAe6BtVcvEdS3FFKT7Mcft4HJjPqMQvi5V4YhzH9Qxw497jC13TupOEvjoIPy7"></script><script type="text/javascript" src="/lib/katex/mhchem.min.a1ad257f10868da5352dd61c921abc2d970ff894dff1cc895deebd3ba544e94ad28735af793e8a88212526b724fecb66.js" integrity="sha384-oa0lfxCGjaU1LdYckhq8LZcP&#43;JTf8cyJXe69O6VE6UrShzWveT6KiCElJrck/stm"></script><script type="text/javascript">window.config={"code":{"copyTitle":"复制到剪贴板","maxShownLines":100},"comment":{},"lightGallery":{"actualSize":false,"exThumbImage":"data-thumbnail","hideBarsDelay":2000,"selector":".lightgallery","speed":400,"thumbContHeight":80,"thumbWidth":80,"thumbnail":true},"math":{"delimiters":[{"display":true,"left":"$$","right":"$$"},{"display":true,"left":"\\[","right":"\\]"},{"display":false,"left":"$","right":"$"},{"display":false,"left":"\\(","right":"\\)"}],"strict":false},"search":{"highlightTag":"em","lunrIndexURL":"/index.json","lunrLanguageCode":"zh","lunrSegmentitURL":"/lib/lunr/lunr.segmentit.js","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":30,"type":"lunr"},"twemoji":true};</script><script type="text/javascript" src="/js/theme.min.f0e4096f68a24e87589ba7942f64874a24befc1ce05399522b0178ac9d3fb20b351b96e095dd6b5bfbe89cb6834a4b3a.js" integrity="sha384-8OQJb2iiTodYm6eUL2SHSiS&#43;/BzgU5lSKwF4rJ0/sgs1G5bgld1rW/vonLaDSks6"></script><script type="text/javascript">
+            window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());
+            gtag('config', '257166355');
+        </script><script type="text/javascript" src="https://www.googletagmanager.com/gtag/js?id=257166355" async></script></body>
+</html>

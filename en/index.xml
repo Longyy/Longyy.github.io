@@ -1,10 +1,10 @@
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
         <title>破折号</title>
-        <link>http://example.org/en/</link>
-        <description>破折号</description>
-        <generator>Hugo -- gohugo.io</generator><language>en</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
-            <webMaster>786603430@qq.com (Little Dragon)</webMaster>
-            <atom:link href="http://example.org/en/index.xml" rel="self" type="application/rss+xml" />
+        <link>http://www.51set.cn/en/</link>
+        <description>破折号--记录成长点滴，成为更好的自已</description>
+        <generator>Hugo -- gohugo.io</generator><language>en</language><managingEditor>longyongyu2020@gmail.com (Little Dragon)</managingEditor>
+            <webMaster>longyongyu2020@gmail.com (Little Dragon)</webMaster>
+            <atom:link href="http://www.51set.cn/en/index.xml" rel="self" type="application/rss+xml" />
         </channel>
 </rss>

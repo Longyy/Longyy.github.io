@@ -1,8 +1,8 @@
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
         <title>Categories - Category - 破折号</title>
-        <link>http://example.org/en/categories/</link>
+        <link>http://www.51set.cn/en/categories/</link>
         <description>Categories - Category - 破折号</description>
         <generator>Hugo -- gohugo.io</generator><language>en</language><managingEditor>786603430@qq.com (Little Dragon)</managingEditor>
-            <webMaster>786603430@qq.com (Little Dragon)</webMaster><atom:link href="http://example.org/en/categories/" rel="self" type="application/rss+xml" /></channel>
+            <webMaster>786603430@qq.com (Little Dragon)</webMaster><atom:link href="http://www.51set.cn/en/categories/" rel="self" type="application/rss+xml" /></channel>
 </rss>

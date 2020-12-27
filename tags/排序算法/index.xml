@@ -1,0 +1,22 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>排序算法 - 标签 - 破折号</title>
+        <link>http://www.51set.cn/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/</link>
+        <description>排序算法 - 标签 - 破折号</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><managingEditor>longyongyu2020@gmail.com (Little Dragon)</managingEditor>
+            <webMaster>longyongyu2020@gmail.com (Little Dragon)</webMaster><lastBuildDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</lastBuildDate><atom:link href="http://www.51set.cn/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" rel="self" type="application/rss+xml" /><item>
+    <title>冒泡排序算法</title>
+    <link>http://www.51set.cn/algorithm-bubble-sort/</link>
+    <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
+    <author>作者</author>
+    <guid>http://www.51set.cn/algorithm-bubble-sort/</guid>
+    <description><![CDATA[#冒泡排序算法 package main import &quot;fmt&quot; //冒泡排序 func BubbleSort(a []int32, n int32) { //循环每一轮后，有序序列长度加一 for i := int32(0); i &lt; n; i++ { //记录每一轮是否有数据交换 flag := false //从头]]></description>
+</item><item>
+    <title>插入排序算法</title>
+    <link>http://www.51set.cn/algorithm-insertion-sort/</link>
+    <pubDate>Mon, 29 Jun 2020 00:00:00 &#43;0000</pubDate>
+    <author>作者</author>
+    <guid>http://www.51set.cn/algorithm-insertion-sort/</guid>
+    <description><![CDATA[插入排序算法 package main import &quot;fmt&quot; //插入排序（Insertion Sort） func InsertionSort(a []int, n int) { //数组个数为1，已经有序 if n == 1 { return } //从第二个元素开始遍历后]]></description>
+</item></channel>
+</rss>
