@@ -211,7 +211,7 @@ require github.com/gin-gonic/gin v1.6.3
 
 ```
 
-我们发现新加了一行require github.com/gin-gonic/gin v1.6.3` ，其中v1.6.3 表示gin依赖的版本，go get 拉取依赖的原则是：
+我们发现新加了一行`require github.com/gin-gonic/gin v1.6.3` ，其中v1.6.3 表示gin的版本，go get 拉取依赖的原则是：
 
 * 若指定了版本，则拉取指定版本代码；
 * 若未指定版本，则拉取最新的release tag.
@@ -259,7 +259,7 @@ github.com/pmezard/go-difflib v1.0.0
 * `replace` 替换依赖项
 * `exclude` 忽略依赖项
 
-module名用于`import` 可以是名字形式也可以是路径形式（例：github.com/golang/crypto）,这样可避免命名冲突。
+module名用于`import` ,可以是名字形式也可以是路径形式（例：github.com/golang/crypto）,这样可避免命名冲突。
 
 replace 用于替换无法直接拉取的依赖（国内朋友深有体会），该语句可以将依赖包用github上的库（或者本地私有库）进行替换。如
 
@@ -290,7 +290,7 @@ exclude github.com/SermoDigital/jose v0.9.1
 replace github.com/google/uuid v1.1.0 => git.coolaj86.com/coolaj86/uuid.go v1.1.1
 ```
 
-### 4.6.提交module到github并使用
+### 4.6.创建全新的module推送至github并使用
 
 这里我们演示如何创建和提交一个新的module, 然后做为本地项目的依赖项使用。
 
@@ -323,7 +323,7 @@ module github.com/Longyy/firstgomod
 go 1.14
 ```
 
-继续在firstgomod目录下执行命令提交firstgomod`到github
+继续在firstgomod目录下执行命令提交`firstgomod` 到github
 
 ```shell
 $ git init
@@ -347,6 +347,8 @@ $ go get github.com/Longyy/firstgomod
 go: downloading github.com/Longyy/firstgomod v0.0.0-20201226041745-5ea883bf90c4
 go: github.com/Longyy/firstgomod upgrade => v0.0.0-20201226041745-5ea883bf90c4
 ```
+
+上面提到，在没有明确指定依赖版本的情况下，go mod会拉取最新release tag, 若没有tag, 则拉取最新的commit生成一个自定义的版本号，当前firgomod就是这种情况（v0.0.0-20201226041745-5ea883bf90c4），版本号分三段："默认版本号-最新Commit提交时间-最新CommitID). 我们要尽量避免使用这样的依赖，因为它实际上并没有进行版本控制，依赖是不稳定的。
 
 在gomod/main.go文件中使用
 
@@ -374,21 +376,191 @@ func main() {
 }
 ```
 
+### 4.7.为firstgomod添加版本控制
 
+打新的Release Tag
 
+```shell
+$ cd /path/to/firstgomod
+$ git tag v1.0.0
+$ git push --tags
+Total 0 (delta 0), reused 0 (delta 0)
+To github.com:Longyy/firstgomod.git
+ * [new tag]         v1.0.0 -> v1.0.0
+```
 
+更新依赖
 
-新建`main.go` 编写下面的代码
+```shell
+$ go get -u github.com/Longyy/firstgomod
+go: github.com/Longyy/firstgomod upgrade => v1.0.0
+go: downloading github.com/Longyy/firstgomod v1.0.0
+```
+
+查看go.mod
+
+```mod
+module gomod
+
+go 1.14
+
+require (
+	github.com/Longyy/firstgomod v1.0.0
+	github.com/gin-gonic/gin v1.6.3
+)
+```
+
+看到firstgomod已经更新到最新的Tag v1.0.0
+
+> 当我们自己在维护module的时候要注意使用语义化版本控制规范，在打补丁(patch)或升级的时候要从具体Tag上切分支，而不是main(或master), 这样才利于保证版本的向后兼容性。
+
+### 4.8.给Module添加打patch
+
+接着我们来给Module打补丁: 给函数添加注释
+
+```shell
+$ git checkout v1.0.0
+$ git checkout -b feature-v1
+```
+
+在util.go中添加注释
 
 ```go
-package main
+package firstgomod
 
+//计算整数较大值
+func Max(x, y int) bool {
+	return x > y
+}
+//计算整数较小值
+func Min(x, y int) bool {
+	return x < y
+}
+```
+
+提交patch到github
+
+```shell
+$ git commit -am 'add func comment'
+$ git push -u origin feature-v1
+$ git tag v1.0.1
+$ git push --tags
+```
+
+更新gomod依赖
+
+```shell
+$ go get -u github.com/Longyy/firstgomod
+go: github.com/Longyy/firstgomod upgrade => v1.0.1
+go: downloading github.com/Longyy/firstgomod v1.0.1
+```
+
+看到依赖已经更新。
+
+### 4.9.给Module更新次要版本
+
+更新次要版本不应该影响module的向后兼容性，我们给firstgomod添加新函数Avg：
+
+```go
+package firstgomod
+
+//计算整数较大值
+func Max(x, y int) bool {
+	return x > y
+}
+//计算整数较小值
+func Min(x, y int) bool {
+	return x < y
+}
+//计算平均值
+func Avg(x, y float32) float32 {
+	return (x + y) / 2
+}
+```
+
+打tag并提交到github
+
+```shell
+$ git commit -am 'add Avg func'
+$ git push
+$ git tag v1.1.1
+$ git push --tags
+```
+
+使用最新版
+
+```shell
+$ go get -u github.com/Longyy/firstgomod
+go: github.com/Longyy/firstgomod upgrade => v1.1.1
+go: downloading github.com/Longyy/firstgomod v1.1.1
+```
+
+### 4.10.给Module更新主版本
+
+主版本更新可以不保证向后兼容性(同一项目的不同主版本可以认为是各自相互独立的项目)，这里我们给三个函数重命名来达到目的
+
+```
+package firstgomod/v2
+
+//计算整数较大值
+func IsMax(x, y int) bool {
+	return x > y
+}
+//计算整数较小值
+func IsMin(x, y int) bool {
+	return x < y
+}
+//计算平均值
+func GetAvg(x, y float32) float32 {
+	return (x + y) / 2
+}
+```
+
+同时为表示区分，我们将firstgomod的的module名字改为`github.com/Longyy/firstgomod/v2` 
+
+```mod
+module github.com/Longyy/firstgomod/v2
+
+go 1.14
+```
+
+打主版本Tag
+
+```shell
+$ git commit -am 'add v2'
+$ git push
+$ git tag v2.0.0
+$ git push --tags
+```
+
+在gomod项目中使用新的主版本v2.0.0
+
+```shell
+$ go get -u github.com/Longyy/firstgomod
+```
+
+这里发现依赖并没有更新，原因就是`go get -u` 不会去更新依赖的主版本号，必须要手动指定
+
+```shell
+$ go get github.com/Longyy/firstgomod@v2.0.0
+go get github.com/Longyy/firstgomod@v2.0.0: github.com/Longyy/firstgomod@v2.0.0: invalid version: module contains a go.mod file, so major version must be compatible: should be v0 or v1, not v2
+```
+
+这时依赖还是不能更新，错误信息告诉我们在现有go.mod依赖下，主版本号必须是v0 或 v1。
+
+我们需要在项目中import这个新版本的依赖，并且在代码中使用
+
+```mod
 import (
+	`fmt`
+	`github.com/Longyy/firstgomod/v2`
 	`github.com/gin-gonic/gin`
 )
 
 func main() {
-	//todo
+	// 使用firstgomod
+	fmt.Println("avg value is:", firstgomod.GetAvg(1 ,2))
+
 	r := gin.Default()
 	r.GET("/test", func(context *gin.Context) {
 		context.JSON(200, gin.H{
@@ -399,10 +571,115 @@ func main() {
 }
 ```
 
+然后运行`go mod tidy` ,可以看见新的版本被拉下来了
 
+```mod
 
-## 5.Go mod 与Go get使用
+go 1.14
 
+require (
+	github.com/Longyy/firstgomod/v2 v2.0.0
+	github.com/gin-gonic/gin v1.6.3
+	github.com/go-playground/validator/v10 v10.4.1 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/ugorji/go v1.2.2 // indirect
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
+	golang.org/x/sys v0.0.0-20201231184435-2d18734c6014 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
+```
 
+当然，一个项目的新老版本是可以同时使用的，只要在import时使用别名就好了
 
+```go
+package main
 
+import (
+	`fmt`
+	`github.com/Longyy/firstgomod`
+	firstgomodv2 `github.com/Longyy/firstgomod/v2`
+	`github.com/gin-gonic/gin`
+)
+
+func main() {
+	// 使用firstgomod
+	fmt.Println("avg value is:", firstgomodv2.GetAvg(1 ,2))
+	fmt.Println("Avg value is:", firstgomod.Avg(1 ,2))
+  // ...
+}
+```
+
+## 5.go mod如何保证项目依赖的稳定性
+
+go.mod文件记录项目所有依赖项目及其版本信息，可有没有想过，我们依赖的这些库如果被篡改了怎么办？或者依赖库的作者删除了我们正在依赖的某些版本怎么办？
+
+实际上, go mod使用了分布式的依赖检验方式，没有统一的依赖镜像中心，每一个项目都维护一份本地的依赖信息，是不是有点“区块链”的味道~
+
+### 5.1.go.sum
+
+这里go mod引入了go.sum文件协同go.mod文件进行依赖管理。
+
+go.sum的作用类似于“借条”，里边详细记录了每一笔“借款”帐目：向谁借的，借的什么，落款签名。其结构如下：
+
+```txt
+<module> <version>[/go.mod] <hash>
+```
+
+每行记录由module名、版本、哈希值组成。这里分两种情况：
+
+* 如果所依赖的版本使用了go mod, 则module名就是go.mod中的`module`字段
+* 如果没有使用go mod, 则module名就是项目路径
+
+比如：
+
+```
+//使用了go mod
+github.com/go-playground/validator/v10 v10.4.1 h1:pH2c5ADXtd66mxoE0Zm9SUhxE20r7aM3F26W0hOn+GE=
+//未使用go mod
+github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
+```
+
+同时，还会为每个依赖版本库生成一行go.mod文件的检验值
+
+```
+github.com/gin-gonic/gin v1.6.3/go.mod h1:75u5sXoLsGZoRN5Sgbi1eraJ4GU3++wFwWzhwvtwp4M=
+```
+
+这个值主要是用在生成依赖树的时候，不必将所有的依赖库代码都拉下来，只用go.mod就行了。
+
+如何生成依赖树呢，使用`go mod why xxx(module name)` 命令即可：
+
+```shell
+$ go mod why github.com/go-playground/validator/v10
+# github.com/go-playground/validator/v10
+gomod
+github.com/gin-gonic/gin
+github.com/gin-gonic/gin/binding
+github.com/go-playground/validator/v10
+```
+
+Hash值前面都会跟一个"h1:"的前缀，表示使用的是hash算法的版本，目前只使用了一种hash算法：SHA-256.
+
+go.mod只记录直接依赖与间接依赖（当依赖没有使用go mod时），go.sum会记录下每一笔版本信息.
+
+当我们执行go get xxx命令时, go mod会将依赖下载到`$GOPATH/pkg/mod/cache/download` 指示的路径下，并生成v.x.y.x.zip的压缩包，同时生成该压缩包的hash值放入v.x.y.x.ziphash文件中，如果执行go get时目录中有go.mod文件，则在生成好hash值后，会同步更新go.mod和go.sum文件，将版本信息及hash值写入。
+
+同时，为保证hash值真实可靠，go mod会向环境变量GOSUMDB指示的服务发起请求，检验该hash是否真实可靠。
+
+### 5.2.GOSUMDB
+
+我们可以通过设置环境变量GOSUMDB指示一个校验数据库服务，提供查询依赖包版本`哈希值` 的服务，此时go get在拉取每一个依赖时，都会去查询该依赖的检验和是否合法，如果不合法go get 将中止执行。
+
+GOSUMDB=off即关闭此服务，go get将跳开校验，相信所有依赖库。
+
+Google官方的`sum.golang.org`记录了所有的可公开获得的`依赖包版本`。除了使用官方的数据库，还可以指定自行搭建的数据库。
+
+## 6.总结
+
+本文用较长的篇幅详细说明了go mod的前世今生，以及在使用中应该注意处理的细节、常用操作的罗列，希望大家在通读后能对go的依赖包管理机制有所了解，并在工作做到心中有数、灵活运用。
+
+欢迎留言交流，谢谢。
