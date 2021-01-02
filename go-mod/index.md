@@ -524,7 +524,7 @@ module github.com/Longyy/firstgomod/v2
 go 1.14
 ```
 
-打主版本Tag
+打主版本Tag 
 
 ```shell
 $ git commit -am 'add v2'
